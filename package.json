@@ -6,6 +6,9 @@
     "dev": "tsx --watch src/index.ts"
   },
   "keywords": [],
+  "engines": {
+    "node": ">=24"
+  },
   "author": "",
   "license": "ISC",
   "type": "module",
