@@ -3,9 +3,10 @@ node_modules
 .env
 .env.local
 
-.agents
-
 dist
 
+.agent
+AGENTS.md
+GEMINI.md
 
 /src/generated/prisma
