@@ -1,5 +1,3 @@
-import dayjs from 'dayjs'
-
 import { NotFoundError, UnauthorizedError } from '../errors/index.js'
 import { WeekDay } from '../generated/prisma/enums.js'
 import { prisma } from '../lib/db.js'
@@ -29,8 +27,8 @@ interface OutputDto {
   sessions: Array<{
     id: string
     workoutDayId: string
-    startedAt?: string
-    completedAt?: string
+    startedAt?: Date
+    completedAt?: Date
   }>
 }
 
@@ -85,23 +83,19 @@ export class GetWorkoutDay {
       const formattedSession: {
         id: string
         workoutDayId: string
-        startedAt?: string
-        completedAt?: string
+        startedAt?: Date
+        completedAt?: Date
       } = {
         id: session.id,
         workoutDayId: session.workoutDayId
       }
 
       if (session.startedAt) {
-        formattedSession.startedAt = dayjs(session.startedAt).format(
-          'YYYY-MM-DD'
-        )
+        formattedSession.startedAt = session.startedAt
       }
 
       if (session.completedAt) {
-        formattedSession.completedAt = dayjs(session.completedAt).format(
-          'YYYY-MM-DD'
-        )
+        formattedSession.completedAt = session.completedAt
       }
 
       return formattedSession

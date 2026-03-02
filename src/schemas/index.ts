@@ -62,12 +62,12 @@ export const StartWorkoutSessionResponseSchema = z.object({
 
 export const UpdateWorkoutSessionParamsSchema = z.object({
   id: z.uuid(),
-  dayId: z.string().uuid(),
-  sessionId: z.string().cuid()
+  dayId: z.uuid(),
+  sessionId: z.cuid()
 })
 
 export const UpdateWorkoutSessionBodySchema = z.object({
-  completedAt: z.string().datetime()
+  completedAt: z.iso.datetime()
 })
 
 export const UpdateWorkoutSessionResponseSchema = z.object({
@@ -76,7 +76,7 @@ export const UpdateWorkoutSessionResponseSchema = z.object({
   startedAt: z.iso.datetime()
 })
 export const HomeParamsSchema = z.object({
-  date: z.string().date()
+  date: z.date()
 })
 
 export const HomeResponseSchema = z.object({
@@ -122,8 +122,8 @@ export const GetWorkoutPlanResponseSchema = z.object({
   )
 })
 export const GetWorkoutDayParamsSchema = z.object({
-  id: z.string().uuid(),
-  dayId: z.string().uuid()
+  id: z.uuid(),
+  dayId: z.uuid()
 })
 
 export const GetWorkoutDayResponseSchema = z.object({
@@ -152,4 +152,22 @@ export const GetWorkoutDayResponseSchema = z.object({
       completedAt: z.date().optional()
     })
   )
+})
+export const GetStatsQuerySchema = z.object({
+  from: z.iso.date(),
+  to: z.iso.date()
+})
+
+export const GetStatsResponseSchema = z.object({
+  workoutStreak: z.number(),
+  consistencyByDay: z.record(
+    z.string(),
+    z.object({
+      workoutDayCompleted: z.boolean(),
+      workoutDayStarted: z.boolean()
+    })
+  ),
+  completedWorkoutsCount: z.number(),
+  conclusionRate: z.number(),
+  totalTimeInSeconds: z.number()
 })

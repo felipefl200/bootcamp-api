@@ -12,6 +12,7 @@ import { z } from 'zod'
 
 import { auth } from './lib/auth.js'
 import { homeRoutes } from './routes/home.js'
+import { statsRoutes } from './routes/stats.js'
 import { workoutPlanRoutes } from './routes/workout-plan.js'
 
 const app = Fastify({
@@ -91,6 +92,7 @@ app.withTypeProvider<ZodTypeProvider>().route({
 
 app.register(workoutPlanRoutes)
 app.register(homeRoutes)
+app.register(statsRoutes)
 
 app.route({
   method: ['GET', 'POST'],
