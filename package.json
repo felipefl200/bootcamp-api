@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:push": "node --env-file=.env ./node_modules/.bin/prisma db push",
-    "db:generate": "npx --env-file=.env prisma generate"
+    "db:generate": "node --env-file=.env ./node_modules/.bin/prisma generate"
   },
   "keywords": [],
   "engines": {
