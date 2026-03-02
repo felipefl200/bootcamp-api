@@ -25,7 +25,7 @@ export async function homeRoutes(app: FastifyInstance) {
     },
     handler: async (request, reply) => {
       const controller = makeGetHomeDataController()
-      return controller.handle(request as any, reply)
+      return controller.handle(request, reply)
     }
   })
 }

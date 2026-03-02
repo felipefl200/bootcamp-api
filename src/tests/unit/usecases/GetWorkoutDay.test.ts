@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NotFoundError, UnauthorizedError } from '../../../errors/index.js'
-import { IWorkoutDayRepository } from '../../../repositories/interfaces/IWorkoutDayRepository.js'
+import {
+  IWorkoutDayRepository,
+  WorkoutDayWithExercisesAndSessions
+} from '../../../repositories/interfaces/IWorkoutDayRepository.js'
 import { IWorkoutPlanRepository } from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
 import { GetWorkoutDay } from '../../../usecases/GetWorkoutDay.js'
 import {
@@ -50,7 +53,7 @@ describe('GetWorkoutDay', () => {
     workoutPlanRepoMock.findById.mockResolvedValue({
       ...makeWorkoutPlan({ userId: 'outro-user' }),
       workoutDays: []
-    } as unknown as any)
+    } as ReturnType<typeof makeWorkoutPlan>)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(
       UnauthorizedError
@@ -61,7 +64,7 @@ describe('GetWorkoutDay', () => {
     workoutPlanRepoMock.findById.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: []
-    } as unknown as any)
+    } as ReturnType<typeof makeWorkoutPlan>)
 
     workoutDayRepoMock.findByIdWithExercisesAndSessions.mockResolvedValue(null)
 
@@ -75,12 +78,12 @@ describe('GetWorkoutDay', () => {
       completedAt: new Date('2025-06-01T11:30:00Z')
     })
 
-    workoutPlanRepoMock.findById.mockResolvedValue(makeWorkoutPlan() as unknown as any)
+    workoutPlanRepoMock.findById.mockResolvedValue(makeWorkoutPlan())
     workoutDayRepoMock.findByIdWithExercisesAndSessions.mockResolvedValue({
       ...makeWorkoutDay({ workoutPlanId: 'plan-id-1' }),
       workoutExercises: [exercise],
       workoutSessions: [session]
-    } as unknown as any)
+    } as WorkoutDayWithExercisesAndSessions)
 
     const result = await useCase.execute(defaultInput)
 
@@ -99,12 +102,12 @@ describe('GetWorkoutDay', () => {
   it('deve omitir completedAt quando a sessão não está concluída', async () => {
     const session = makeWorkoutSession({ completedAt: null })
 
-    workoutPlanRepoMock.findById.mockResolvedValue(makeWorkoutPlan() as unknown as any)
+    workoutPlanRepoMock.findById.mockResolvedValue(makeWorkoutPlan())
     workoutDayRepoMock.findByIdWithExercisesAndSessions.mockResolvedValue({
       ...makeWorkoutDay({ workoutPlanId: 'plan-id-1' }),
       workoutExercises: [],
       workoutSessions: [session]
-    } as unknown as any)
+    } as WorkoutDayWithExercisesAndSessions)
 
     const result = await useCase.execute(defaultInput)
 
@@ -116,12 +119,12 @@ describe('GetWorkoutDay', () => {
     // set=3, rep=12, restTime=90 → 12*3*5 + 90*3 = 180 + 270 = 450s
     const exercise = makeWorkoutExercise({ set: 3, rep: 12, restTime: 90 })
 
-    workoutPlanRepoMock.findById.mockResolvedValue(makeWorkoutPlan() as unknown as any)
+    workoutPlanRepoMock.findById.mockResolvedValue(makeWorkoutPlan())
     workoutDayRepoMock.findByIdWithExercisesAndSessions.mockResolvedValue({
       ...makeWorkoutDay({ workoutPlanId: 'plan-id-1' }),
       workoutExercises: [exercise],
       workoutSessions: []
-    } as unknown as any)
+    } as WorkoutDayWithExercisesAndSessions)
 
     const result = await useCase.execute(defaultInput)
 

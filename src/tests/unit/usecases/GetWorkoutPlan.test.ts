@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NotFoundError, UnauthorizedError } from '../../../errors/index.js'
-import { IWorkoutPlanRepository } from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
+import {
+  IWorkoutPlanRepository,
+  WorkoutPlanWithDays
+} from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
 import { GetWorkoutPlan } from '../../../usecases/GetWorkoutPlan.js'
 import {
   makeWorkoutDay,
@@ -39,7 +42,7 @@ describe('GetWorkoutPlan', () => {
     workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan({ userId: 'outro-user' }),
       workoutDays: []
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(
       UnauthorizedError
@@ -57,7 +60,7 @@ describe('GetWorkoutPlan', () => {
           workoutExercises: [exercise]
         }
       ]
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
 
     const result = await useCase.execute(defaultInput)
 
@@ -74,7 +77,7 @@ describe('GetWorkoutPlan', () => {
       workoutDays: [
         { ...makeWorkoutDay({ isRest: true }), workoutExercises: [] }
       ]
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
 
     const result = await useCase.execute(defaultInput)
 

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>17/17</span>
+                <span class='fraction'>20/20</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>17/17</span>
+                <span class='fraction'>20/20</span>
             </div>
         
             
@@ -140,7 +140,9 @@
 <a name='L75'></a><a href='#L75'>75</a>
 <a name='L76'></a><a href='#L76'>76</a>
 <a name='L77'></a><a href='#L77'>77</a>
-<a name='L78'></a><a href='#L78'>78</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -158,6 +160,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -198,17 +208,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -224,7 +228,9 @@
   UnauthorizedError,
   WorkoutPlanNotActiveError
 } from '../errors/index.js'
-import { prisma } from '../lib/db.js'
+import { IWorkoutDayRepository } from '../repositories/interfaces/IWorkoutDayRepository.js'
+import { IWorkoutPlanRepository } from '../repositories/interfaces/IWorkoutPlanRepository.js'
+import { IWorkoutSessionRepository } from '../repositories/interfaces/IWorkoutSessionRepository.js'
 &nbsp;
 interface InputDto {
   userId: string
@@ -237,10 +243,16 @@ interface OutputDto {
 }
 &nbsp;
 export class StartWorkoutSession {
+  constructor(
+    private workoutPlanRepository: IWorkoutPlanRepository,
+    private workoutDayRepository: IWorkoutDayRepository,
+    private workoutSessionRepository: IWorkoutSessionRepository
+  ) {}
+&nbsp;
   async execute(dto: InputDto): Promise&lt;OutputDto&gt; {
-    const workoutPlan = await prisma.workoutPlan.findUnique({
-      where: { id: dto.workoutPlanId }
-    })
+    const workoutPlan = await this.workoutPlanRepository.findById(
+      dto.workoutPlanId
+    )
 &nbsp;
     if (!workoutPlan) {
       throw new NotFoundError('Workout plan not found')
@@ -256,9 +268,9 @@ export class StartWorkoutSession {
       throw new WorkoutPlanNotActiveError('WorkoutPlanNotActiveError')
     }
 &nbsp;
-    const workoutDay = await prisma.workoutDay.findUnique({
-      where: { id: dto.workoutDayId }
-    })
+    const workoutDay = await this.workoutDayRepository.findById(
+      dto.workoutDayId
+    )
 &nbsp;
     if (!workoutDay) {
       throw new NotFoundError('Workout day not found')
@@ -270,24 +282,18 @@ export class StartWorkoutSession {
       )
     }
 &nbsp;
-    // Checking if there is already an active session
-    const activeSession = await prisma.workoutSession.findFirst({
-      where: {
-        workoutDayId: dto.workoutDayId,
-        completedAt: null
-      }
-    })
+    const activeSession =
+      await this.workoutSessionRepository.findActiveSessionForDay(
+        dto.workoutDayId
+      )
 &nbsp;
     if (activeSession) {
       throw new ConflictError('A session is already active for this day')
     }
 &nbsp;
-    const workoutSession = await prisma.workoutSession.create({
-      data: {
-        startedAt: new Date(),
-        workoutDayId: dto.workoutDayId
-      }
-    })
+    const workoutSession = await this.workoutSessionRepository.create(
+      dto.workoutDayId
+    )
 &nbsp;
     return {
       userWorkoutSessionId: workoutSession.id
@@ -301,7 +307,7 @@ export class StartWorkoutSession {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-02T20:49:18.794Z
+                at 2026-03-02T22:57:28.849Z
             </div>
         <script src="../prettify.js"></script>
         <script>

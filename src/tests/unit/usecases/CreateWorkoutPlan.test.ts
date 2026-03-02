@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { IWorkoutPlanRepository } from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
+import {
+  IWorkoutPlanRepository,
+  WorkoutPlanFullData
+} from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
 import { CreateWorkoutPlan } from '../../../usecases/CreateWorkoutPlan.js'
 import {
   makeWorkoutDay,
@@ -55,7 +58,7 @@ describe('CreateWorkoutPlan', () => {
     const createdPlan = makePlanWithDays()
 
     workoutPlanRepoMock.createWithDeactivation.mockResolvedValue(
-      createdPlan as unknown as any
+      createdPlan as unknown as WorkoutPlanFullData
     )
 
     const result = await useCase.execute(defaultInput)
@@ -69,7 +72,7 @@ describe('CreateWorkoutPlan', () => {
     const createdPlan = makePlanWithDays()
 
     workoutPlanRepoMock.createWithDeactivation.mockResolvedValue(
-      createdPlan as unknown as any
+      createdPlan as unknown as WorkoutPlanFullData
     )
 
     const result = await useCase.execute(defaultInput)

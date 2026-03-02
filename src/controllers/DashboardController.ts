@@ -8,11 +8,9 @@ import { GetStats } from '../usecases/GetStats.js'
 export class GetHomeDataController {
   constructor(private getHomeDataUseCase: GetHomeData) {}
 
-  async handle(
-    request: FastifyRequest<{ Params: { date: string } }>,
-    reply: FastifyReply
-  ) {
+  async handle(request: FastifyRequest, reply: FastifyReply) {
     try {
+      const params = request.params as { date: string }
       const authSession = await auth.api.getSession({
         headers: fromNodeHeaders(request.headers)
       })
@@ -25,7 +23,7 @@ export class GetHomeDataController {
 
       const result = await this.getHomeDataUseCase.execute({
         userId: authSession.user.id,
-        date: request.params.date
+        date: params.date
       })
 
       return reply.status(200).send(result)
@@ -41,11 +39,9 @@ export class GetHomeDataController {
 export class GetStatsController {
   constructor(private getStatsUseCase: GetStats) {}
 
-  async handle(
-    request: FastifyRequest<{ Querystring: { from: string; to: string } }>,
-    reply: FastifyReply
-  ) {
+  async handle(request: FastifyRequest, reply: FastifyReply) {
     try {
+      const query = request.query as { from: string; to: string }
       const authSession = await auth.api.getSession({
         headers: fromNodeHeaders(request.headers)
       })
@@ -58,8 +54,8 @@ export class GetStatsController {
 
       const result = await this.getStatsUseCase.execute({
         userId: authSession.user.id,
-        from: request.query.from,
-        to: request.query.to
+        from: query.from,
+        to: query.to
       })
 
       return reply.status(200).send(result)

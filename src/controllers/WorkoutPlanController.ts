@@ -1,15 +1,16 @@
 import { fromNodeHeaders } from 'better-auth/node'
 import { FastifyReply, FastifyRequest } from 'fastify'
+import { z } from 'zod'
 
-import {
-  BadRequestError,
-  NotFoundError,
-  UnauthorizedError} from '../errors/index.js'
+import { NotFoundError, UnauthorizedError } from '../errors/index.js'
 import { auth } from '../lib/auth.js'
+import { CreateWorkoutPlanParamsSchema } from '../schemas/index.js'
 import { CreateWorkoutPlan } from '../usecases/CreateWorkoutPlan.js'
 import { GetWorkoutDay } from '../usecases/GetWorkoutDay.js'
 import { GetWorkoutPlan } from '../usecases/GetWorkoutPlan.js'
 import { ListWorkoutPlans } from '../usecases/ListWorkoutPlans.js'
+
+type CreateWorkoutPlanBody = z.infer<typeof CreateWorkoutPlanParamsSchema>
 
 export class ListWorkoutPlansController {
   constructor(private listWorkoutPlansUseCase: ListWorkoutPlans) {}
@@ -44,8 +45,9 @@ export class ListWorkoutPlansController {
 export class CreateWorkoutPlanController {
   constructor(private createWorkoutPlanUseCase: CreateWorkoutPlan) {}
 
-  async handle(request: FastifyRequest<{ Body: any }>, reply: FastifyReply) {
+  async handle(request: FastifyRequest, reply: FastifyReply) {
     try {
+      const body = request.body as CreateWorkoutPlanBody
       const authSession = await auth.api.getSession({
         headers: fromNodeHeaders(request.headers)
       })
@@ -59,8 +61,8 @@ export class CreateWorkoutPlanController {
       const result = await this.createWorkoutPlanUseCase.execute({
         userId: authSession.user.id,
         sessionId: authSession.session.id,
-        name: request.body.name,
-        workoutDays: request.body.workoutDays
+        name: body.name,
+        workoutDays: body.workoutDays
       })
 
       return reply.status(201).send(result)
@@ -84,11 +86,9 @@ export class CreateWorkoutPlanController {
 export class GetWorkoutPlanController {
   constructor(private getWorkoutPlanUseCase: GetWorkoutPlan) {}
 
-  async handle(
-    request: FastifyRequest<{ Params: { id: string } }>,
-    reply: FastifyReply
-  ) {
+  async handle(request: FastifyRequest, reply: FastifyReply) {
     try {
+      const params = request.params as { id: string }
       const authSession = await auth.api.getSession({
         headers: fromNodeHeaders(request.headers)
       })
@@ -101,7 +101,7 @@ export class GetWorkoutPlanController {
 
       const result = await this.getWorkoutPlanUseCase.execute({
         userId: authSession.user.id,
-        workoutPlanId: request.params.id
+        workoutPlanId: params.id
       })
 
       return reply.status(200).send(result)
@@ -128,11 +128,9 @@ export class GetWorkoutPlanController {
 export class GetWorkoutDayController {
   constructor(private getWorkoutDayUseCase: GetWorkoutDay) {}
 
-  async handle(
-    request: FastifyRequest<{ Params: { id: string; dayId: string } }>,
-    reply: FastifyReply
-  ) {
+  async handle(request: FastifyRequest, reply: FastifyReply) {
     try {
+      const params = request.params as { id: string; dayId: string }
       const authSession = await auth.api.getSession({
         headers: fromNodeHeaders(request.headers)
       })
@@ -145,8 +143,8 @@ export class GetWorkoutDayController {
 
       const result = await this.getWorkoutDayUseCase.execute({
         userId: authSession.user.id,
-        workoutPlanId: request.params.id,
-        workoutDayId: request.params.dayId
+        workoutPlanId: params.id,
+        workoutDayId: params.dayId
       })
 
       return reply.status(200).send(result)

@@ -24,7 +24,7 @@ export async function statsRoutes(app: FastifyInstance) {
     },
     handler: async (request, reply) => {
       const controller = makeGetStatsController()
-      return controller.handle(request as any, reply)
+      return controller.handle(request, reply)
     }
   })
 }

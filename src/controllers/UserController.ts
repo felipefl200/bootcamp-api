@@ -1,9 +1,13 @@
 import { fromNodeHeaders } from 'better-auth/node'
 import { FastifyReply, FastifyRequest } from 'fastify'
+import { z } from 'zod'
 
 import { auth } from '../lib/auth.js'
+import { UpsertUserTrainDataBodySchema } from '../schemas/index.js'
 import { GetUserTrainData } from '../usecases/GetUserTrainData.js'
 import { UpsertUserTrainData } from '../usecases/UpsertUserTrainData.js'
+
+type UpsertUserTrainDataBody = z.infer<typeof UpsertUserTrainDataBodySchema>
 
 export class GetUserTrainDataController {
   constructor(private getUserTrainDataUseCase: GetUserTrainData) {}
@@ -39,7 +43,7 @@ export class GetUserTrainDataController {
 export class UpsertUserTrainDataController {
   constructor(private upsertUserTrainDataUseCase: UpsertUserTrainData) {}
 
-  async handle(request: FastifyRequest<{ Body: any }>, reply: FastifyReply) {
+  async handle(request: FastifyRequest, reply: FastifyReply) {
     try {
       const authSession = await auth.api.getSession({
         headers: fromNodeHeaders(request.headers)
@@ -52,7 +56,7 @@ export class UpsertUserTrainDataController {
         })
       }
 
-      const body = request.body
+      const body = request.body as UpsertUserTrainDataBody
 
       const result = await this.upsertUserTrainDataUseCase.execute({
         userId: authSession.user.id,

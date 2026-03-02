@@ -5,7 +5,10 @@ import {
   NotFoundError,
   UnauthorizedError
 } from '../../../errors/index.js'
-import { IWorkoutPlanRepository } from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
+import {
+  IWorkoutPlanRepository,
+  WorkoutPlanWithDays
+} from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
 import { IWorkoutSessionRepository } from '../../../repositories/interfaces/IWorkoutSessionRepository.js'
 import { UpdateWorkoutSession } from '../../../usecases/UpdateWorkoutSession.js'
 import {
@@ -60,7 +63,7 @@ describe('UpdateWorkoutSession', () => {
     workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan({ userId: 'outro-user' }),
       workoutDays: []
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(
       UnauthorizedError
@@ -71,7 +74,7 @@ describe('UpdateWorkoutSession', () => {
     workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: []
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(BadRequestError)
   })
@@ -80,7 +83,7 @@ describe('UpdateWorkoutSession', () => {
     workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: [makeWorkoutDay()]
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
     workoutSessionRepoMock.findById.mockResolvedValue(null)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(NotFoundError)
@@ -90,7 +93,7 @@ describe('UpdateWorkoutSession', () => {
     workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: [makeWorkoutDay()]
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
     workoutSessionRepoMock.findById.mockResolvedValue(
       makeWorkoutSession({ workoutDayId: 'outro-day-id' })
     )
@@ -105,7 +108,7 @@ describe('UpdateWorkoutSession', () => {
     workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: [makeWorkoutDay()]
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
     workoutSessionRepoMock.findById.mockResolvedValue(
       makeWorkoutSession({ startedAt })
     )

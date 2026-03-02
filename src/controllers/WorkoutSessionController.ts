@@ -15,11 +15,9 @@ import { UpdateWorkoutSession } from '../usecases/UpdateWorkoutSession.js'
 export class StartWorkoutSessionController {
   constructor(private startWorkoutSessionUseCase: StartWorkoutSession) {}
 
-  async handle(
-    request: FastifyRequest<{ Params: { id: string; dayId: string } }>,
-    reply: FastifyReply
-  ) {
+  async handle(request: FastifyRequest, reply: FastifyReply) {
     try {
+      const params = request.params as { id: string; dayId: string }
       const authSession = await auth.api.getSession({
         headers: fromNodeHeaders(request.headers)
       })
@@ -32,8 +30,8 @@ export class StartWorkoutSessionController {
 
       const result = await this.startWorkoutSessionUseCase.execute({
         userId: authSession.user.id,
-        workoutPlanId: request.params.id,
-        workoutDayId: request.params.dayId
+        workoutPlanId: params.id,
+        workoutDayId: params.dayId
       })
 
       return reply.status(201).send(result)
@@ -71,14 +69,14 @@ export class StartWorkoutSessionController {
 export class UpdateWorkoutSessionController {
   constructor(private updateWorkoutSessionUseCase: UpdateWorkoutSession) {}
 
-  async handle(
-    request: FastifyRequest<{
-      Params: { id: string; dayId: string; sessionId: string }
-      Body: any
-    }>,
-    reply: FastifyReply
-  ) {
+  async handle(request: FastifyRequest, reply: FastifyReply) {
     try {
+      const params = request.params as {
+        id: string
+        dayId: string
+        sessionId: string
+      }
+      const body = request.body as { completedAt: string }
       const authSession = await auth.api.getSession({
         headers: fromNodeHeaders(request.headers)
       })
@@ -91,10 +89,10 @@ export class UpdateWorkoutSessionController {
 
       const result = await this.updateWorkoutSessionUseCase.execute({
         userId: authSession.user.id,
-        workoutPlanId: request.params.id,
-        workoutDayId: request.params.dayId,
-        workoutSessionId: request.params.sessionId,
-        completedAt: request.body.completedAt
+        workoutPlanId: params.id,
+        workoutDayId: params.dayId,
+        workoutSessionId: params.sessionId,
+        completedAt: body.completedAt
       })
 
       return reply.status(200).send(result)

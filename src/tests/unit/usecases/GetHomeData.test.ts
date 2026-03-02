@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { IWorkoutPlanRepository } from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
+import {
+  IWorkoutPlanRepository,
+  WorkoutPlanWithDays
+} from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
 import { IWorkoutSessionRepository } from '../../../repositories/interfaces/IWorkoutSessionRepository.js'
 import { GetHomeData } from '../../../usecases/GetHomeData.js'
 import {
@@ -69,7 +72,7 @@ describe('GetHomeData', () => {
       workoutDays: [
         { ...makeWorkoutDay({ weekDay: 'TUESDAY' }), workoutExercises: [] }
       ]
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
     workoutSessionRepoMock.findSessionsInPeriod.mockResolvedValue([])
 
     const result = await useCase.execute(defaultInput)
@@ -89,7 +92,7 @@ describe('GetHomeData', () => {
           workoutExercises: [exercise]
         }
       ]
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
     workoutSessionRepoMock.findSessionsInPeriod.mockResolvedValue([])
 
     const result = await useCase.execute(defaultInput)
@@ -105,7 +108,7 @@ describe('GetHomeData', () => {
       workoutDays: [
         { ...makeWorkoutDay({ weekDay: 'MONDAY' }), workoutExercises: [] }
       ]
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
     workoutSessionRepoMock.findSessionsInPeriod
       .mockResolvedValueOnce([
         makeWorkoutSession({
@@ -129,7 +132,7 @@ describe('GetHomeData', () => {
       workoutDays: [
         { ...makeWorkoutDay({ weekDay: 'MONDAY' }), workoutExercises: [] }
       ]
-    } as unknown as any)
+    } as WorkoutPlanWithDays)
     const completedSession = makeWorkoutSession({
       startedAt: new Date('2025-06-02T10:00:00Z'),
       completedAt: new Date('2025-06-02T11:00:00Z')

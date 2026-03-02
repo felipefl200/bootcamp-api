@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>18/18</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>18/18</span>
             </div>
         
             
@@ -142,7 +142,13 @@
 <a name='L77'></a><a href='#L77'>77</a>
 <a name='L78'></a><a href='#L78'>78</a>
 <a name='L79'></a><a href='#L79'>79</a>
-<a name='L80'></a><a href='#L80'>80</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -167,11 +173,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -184,6 +190,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -211,7 +220,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -226,8 +234,10 @@
 import {
   BadRequestError,
   NotFoundError,
-  UnauthorizedError} from '../errors/index.js'
-import { prisma } from '../lib/db.js'
+  UnauthorizedError
+} from '../errors/index.js'
+import { IWorkoutPlanRepository } from '../repositories/interfaces/IWorkoutPlanRepository.js'
+import { IWorkoutSessionRepository } from '../repositories/interfaces/IWorkoutSessionRepository.js'
 &nbsp;
 interface InputDto {
   userId: string
@@ -244,15 +254,15 @@ interface OutputDto {
 }
 &nbsp;
 export class UpdateWorkoutSession {
+  constructor(
+    private workoutPlanRepository: IWorkoutPlanRepository,
+    private workoutSessionRepository: IWorkoutSessionRepository
+  ) {}
+&nbsp;
   async execute(dto: InputDto): Promise&lt;OutputDto&gt; {
-    const workoutPlan = await prisma.workoutPlan.findUnique({
-      where: { id: dto.workoutPlanId },
-      include: {
-        workoutDays: {
-          where: { id: dto.workoutDayId }
-        }
-      }
-    })
+    const workoutPlan = await this.workoutPlanRepository.findByIdWithDays(
+      dto.workoutPlanId
+    )
 &nbsp;
     if (!workoutPlan) {
       throw new NotFoundError('Workout plan not found')
@@ -264,15 +274,18 @@ export class UpdateWorkoutSession {
       )
     }
 &nbsp;
-    if (workoutPlan.workoutDays.length === 0) {
+    const dayExists = workoutPlan.workoutDays.some(
+      (day) =&gt; day.id === dto.workoutDayId
+    )
+    if (!dayExists) {
       throw new BadRequestError(
         'Workout day does not belong to this workout plan'
       )
     }
 &nbsp;
-    const session = await prisma.workoutSession.findUnique({
-      where: { id: dto.workoutSessionId }
-    })
+    const session = await this.workoutSessionRepository.findById(
+      dto.workoutSessionId
+    )
 &nbsp;
     if (!session) {
       throw new NotFoundError('Workout session not found')
@@ -284,12 +297,11 @@ export class UpdateWorkoutSession {
       )
     }
 &nbsp;
-    const updatedSession = await prisma.workoutSession.update({
-      where: { id: dto.workoutSessionId },
-      data: {
-        completedAt: dayjs(dto.completedAt).toDate()
-      }
-    })
+    const updatedSession = await this.workoutSessionRepository.markAsCompleted(
+      dto.workoutSessionId,
+      session.startedAt,
+      dayjs(dto.completedAt).toDate()
+    )
 &nbsp;
     return {
       id: updatedSession.id,
@@ -307,7 +319,7 @@ export class UpdateWorkoutSession {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-02T20:49:18.794Z
+                at 2026-03-02T22:57:28.849Z
             </div>
         <script src="../prettify.js"></script>
         <script>

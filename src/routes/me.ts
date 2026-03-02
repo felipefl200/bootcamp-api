@@ -44,9 +44,8 @@ export async function meRoutes(app: FastifyInstance) {
       }
     },
     handler: async (request, reply) => {
-      // Typecasting manual para o request body já que na factory separamos o contexto da rota p/ manter desacoplado
       const controller = makeUpsertUserTrainDataController()
-      return controller.handle(request as any, reply)
+      return controller.handle(request, reply)
     }
   })
 }

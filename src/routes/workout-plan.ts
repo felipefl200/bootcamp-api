@@ -43,7 +43,7 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
     },
     handler: async (request, reply) => {
       const controller = makeCreateWorkoutPlanController()
-      return controller.handle(request as any, reply)
+      return controller.handle(request, reply)
     }
   })
 
@@ -65,7 +65,7 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
     },
     handler: async (request, reply) => {
       const controller = makeStartWorkoutSessionController()
-      return controller.handle(request as any, reply)
+      return controller.handle(request, reply)
     }
   })
 
@@ -87,7 +87,7 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
     },
     handler: async (request, reply) => {
       const controller = makeUpdateWorkoutSessionController()
-      return controller.handle(request as any, reply)
+      return controller.handle(request, reply)
     }
   })
 
@@ -107,7 +107,7 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
     },
     handler: async (request, reply) => {
       const controller = makeGetWorkoutPlanController()
-      return controller.handle(request as any, reply)
+      return controller.handle(request, reply)
     }
   })
 
@@ -127,7 +127,7 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
     },
     handler: async (request, reply) => {
       const controller = makeGetWorkoutDayController()
-      return controller.handle(request as any, reply)
+      return controller.handle(request, reply)
     }
   })
 }

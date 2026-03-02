@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { IUserTrainDataRepository } from '../../../repositories/interfaces/IUserTrainDataRepository.js'
+import {
+  IUserTrainDataRepository,
+  UserTrainDataWithUser
+} from '../../../repositories/interfaces/IUserTrainDataRepository.js'
 import { GetUserTrainData } from '../../../usecases/GetUserTrainData.js'
 import { makeUserTrainData } from '../../factories/index.js'
 
@@ -28,7 +31,7 @@ describe('GetUserTrainData', () => {
 
   it('deve retornar os dados de treino com o nome do usuário', async () => {
     userTrainDataRepositoryMock.findByUserId.mockResolvedValue(
-      makeUserTrainData({ user: { name: 'Felipe' } }) as unknown as any
+      makeUserTrainData({ user: { name: 'Felipe' } }) as UserTrainDataWithUser
     )
 
     const result = await useCase.execute(defaultInput)

@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>20/20</span>
+                <span class='fraction'>22/22</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90% </span>
+                <span class="strong">91.66% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>9/10</span>
+                <span class='fraction'>11/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>19/19</span>
+                <span class='fraction'>21/21</span>
             </div>
         
             
@@ -214,16 +214,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -235,7 +232,10 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -295,7 +295,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { NotFoundError, UnauthorizedError } from '../errors/index.js'
 import { WeekDay } from '../generated/prisma/enums.js'
-import { prisma } from '../lib/db.js'
+import { IWorkoutDayRepository } from '../repositories/interfaces/IWorkoutDayRepository.js'
+import { IWorkoutPlanRepository } from '../repositories/interfaces/IWorkoutPlanRepository.js'
 &nbsp;
 interface InputDto {
   userId: string
@@ -305,7 +306,7 @@ interface InputDto {
 &nbsp;
 interface OutputDto {
   id: string
-  name: string
+  name: string | null
   isRest: boolean
   coverImageUrl: string | null
   estimatedDurationInSeconds: number
@@ -328,19 +329,15 @@ interface OutputDto {
 }
 &nbsp;
 export class GetWorkoutDay {
+  constructor(
+    private workoutPlanRepository: IWorkoutPlanRepository,
+    private workoutDayRepository: IWorkoutDayRepository
+  ) {}
+&nbsp;
   async execute(dto: InputDto): Promise&lt;OutputDto&gt; {
-    const workoutPlan = await prisma.workoutPlan.findUnique({
-      where: { id: dto.workoutPlanId },
-      include: {
-        workoutDays: {
-          where: { id: dto.workoutDayId },
-          include: {
-            workoutExercises: true,
-            workoutSessions: true
-          }
-        }
-      }
-    })
+    const workoutPlan = await this.workoutPlanRepository.findById(
+      dto.workoutPlanId
+    )
 &nbsp;
     if (!workoutPlan) {
       throw new NotFoundError('Workout plan not found')
@@ -350,9 +347,12 @@ export class GetWorkoutDay {
       throw new UnauthorizedError('Unauthorized to access this workout plan')
     }
 &nbsp;
-    const workoutDay = workoutPlan.workoutDays[0]
+    const workoutDay =
+      await this.workoutDayRepository.findByIdWithExercisesAndSessions(
+        dto.workoutDayId
+      )
 &nbsp;
-    if (!workoutDay) {
+    if (!workoutDay || workoutDay.workoutPlanId !== workoutPlan.id) {
       throw new NotFoundError('Workout day not found')
     }
 &nbsp;
@@ -415,7 +415,7 @@ export class GetWorkoutDay {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-02T20:49:18.794Z
+                at 2026-03-02T22:57:28.849Z
             </div>
         <script src="../prettify.js"></script>
         <script>
