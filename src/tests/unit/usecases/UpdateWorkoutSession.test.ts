@@ -5,6 +5,8 @@ import {
   NotFoundError,
   UnauthorizedError
 } from '../../../errors/index.js'
+import { IWorkoutPlanRepository } from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
+import { IWorkoutSessionRepository } from '../../../repositories/interfaces/IWorkoutSessionRepository.js'
 import { UpdateWorkoutSession } from '../../../usecases/UpdateWorkoutSession.js'
 import {
   makeWorkoutDay,
@@ -12,42 +14,10 @@ import {
   makeWorkoutSession
 } from '../../factories/index.js'
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    workoutPlan: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    workoutDay: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-    },
-    workoutSession: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-      findUniqueOrThrow: vi.fn(),
-    },
-    userTrainData: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-    },
-    $transaction: vi.fn(),
-  },
-}))
-
-vi.mock('../../../lib/db.js', () => ({ prisma: prismaMock }))
-
 describe('UpdateWorkoutSession', () => {
-  const useCase = new UpdateWorkoutSession()
+  let useCase: UpdateWorkoutSession
+  let workoutPlanRepoMock: vi.Mocked<IWorkoutPlanRepository>
+  let workoutSessionRepoMock: vi.Mocked<IWorkoutSessionRepository>
 
   const defaultInput = {
     userId: 'user-id-1',
@@ -58,20 +28,39 @@ describe('UpdateWorkoutSession', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    workoutPlanRepoMock = {
+      findById: vi.fn(),
+      findByIdWithDays: vi.fn(),
+      findActiveByUserId: vi.fn(),
+      findManyByUserId: vi.fn(),
+      createWithDeactivation: vi.fn()
+    }
+
+    workoutSessionRepoMock = {
+      findById: vi.fn(),
+      findActiveSessionForDay: vi.fn(),
+      findSessionsInPeriod: vi.fn(),
+      create: vi.fn(),
+      markAsCompleted: vi.fn()
+    }
+
+    useCase = new UpdateWorkoutSession(
+      workoutPlanRepoMock,
+      workoutSessionRepoMock
+    )
   })
 
   it('deve lançar NotFoundError quando o plano não existe', async () => {
-    prismaMock.workoutPlan.findUnique.mockResolvedValue(null)
+    workoutPlanRepoMock.findByIdWithDays.mockResolvedValue(null)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(NotFoundError)
   })
 
   it('deve lançar UnauthorizedError quando o userId não é o dono do plano', async () => {
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
+    workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan({ userId: 'outro-user' }),
       workoutDays: []
-    })
+    } as unknown as any)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(
       UnauthorizedError
@@ -79,30 +68,30 @@ describe('UpdateWorkoutSession', () => {
   })
 
   it('deve lançar BadRequestError quando o dia não pertence ao plano', async () => {
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
+    workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: []
-    })
+    } as unknown as any)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(BadRequestError)
   })
 
   it('deve lançar NotFoundError quando a sessão não existe', async () => {
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
+    workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: [makeWorkoutDay()]
-    })
-    prismaMock.workoutSession.findUnique.mockResolvedValue(null)
+    } as unknown as any)
+    workoutSessionRepoMock.findById.mockResolvedValue(null)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(NotFoundError)
   })
 
   it('deve lançar BadRequestError quando a sessão não pertence ao dia', async () => {
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
+    workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: [makeWorkoutDay()]
-    })
-    prismaMock.workoutSession.findUnique.mockResolvedValue(
+    } as unknown as any)
+    workoutSessionRepoMock.findById.mockResolvedValue(
       makeWorkoutSession({ workoutDayId: 'outro-day-id' })
     )
 
@@ -113,12 +102,14 @@ describe('UpdateWorkoutSession', () => {
     const startedAt = new Date('2025-06-01T10:00:00Z')
     const completedAt = new Date('2025-06-01T12:00:00Z')
 
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
+    workoutPlanRepoMock.findByIdWithDays.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: [makeWorkoutDay()]
-    })
-    prismaMock.workoutSession.findUnique.mockResolvedValue(makeWorkoutSession())
-    prismaMock.workoutSession.update.mockResolvedValue(
+    } as unknown as any)
+    workoutSessionRepoMock.findById.mockResolvedValue(
+      makeWorkoutSession({ startedAt })
+    )
+    workoutSessionRepoMock.markAsCompleted.mockResolvedValue(
       makeWorkoutSession({ startedAt, completedAt })
     )
 
@@ -129,6 +120,6 @@ describe('UpdateWorkoutSession', () => {
       startedAt: startedAt.toISOString(),
       completedAt: completedAt.toISOString()
     })
-    expect(prismaMock.workoutSession.update).toHaveBeenCalledOnce()
+    expect(workoutSessionRepoMock.markAsCompleted).toHaveBeenCalledOnce()
   })
 })

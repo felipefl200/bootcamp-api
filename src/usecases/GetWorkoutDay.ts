@@ -1,6 +1,7 @@
 import { NotFoundError, UnauthorizedError } from '../errors/index.js'
 import { WeekDay } from '../generated/prisma/enums.js'
-import { prisma } from '../lib/db.js'
+import { IWorkoutDayRepository } from '../repositories/interfaces/IWorkoutDayRepository.js'
+import { IWorkoutPlanRepository } from '../repositories/interfaces/IWorkoutPlanRepository.js'
 
 interface InputDto {
   userId: string
@@ -10,7 +11,7 @@ interface InputDto {
 
 interface OutputDto {
   id: string
-  name: string
+  name: string | null
   isRest: boolean
   coverImageUrl: string | null
   estimatedDurationInSeconds: number
@@ -33,19 +34,15 @@ interface OutputDto {
 }
 
 export class GetWorkoutDay {
+  constructor(
+    private workoutPlanRepository: IWorkoutPlanRepository,
+    private workoutDayRepository: IWorkoutDayRepository
+  ) {}
+
   async execute(dto: InputDto): Promise<OutputDto> {
-    const workoutPlan = await prisma.workoutPlan.findUnique({
-      where: { id: dto.workoutPlanId },
-      include: {
-        workoutDays: {
-          where: { id: dto.workoutDayId },
-          include: {
-            workoutExercises: true,
-            workoutSessions: true
-          }
-        }
-      }
-    })
+    const workoutPlan = await this.workoutPlanRepository.findById(
+      dto.workoutPlanId
+    )
 
     if (!workoutPlan) {
       throw new NotFoundError('Workout plan not found')
@@ -55,9 +52,12 @@ export class GetWorkoutDay {
       throw new UnauthorizedError('Unauthorized to access this workout plan')
     }
 
-    const workoutDay = workoutPlan.workoutDays[0]
+    const workoutDay =
+      await this.workoutDayRepository.findByIdWithExercisesAndSessions(
+        dto.workoutDayId
+      )
 
-    if (!workoutDay) {
+    if (!workoutDay || workoutDay.workoutPlanId !== workoutPlan.id) {
       throw new NotFoundError('Workout day not found')
     }
 

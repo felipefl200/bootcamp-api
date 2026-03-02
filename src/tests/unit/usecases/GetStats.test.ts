@@ -1,44 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { IWorkoutSessionRepository } from '../../../repositories/interfaces/IWorkoutSessionRepository.js'
 import { GetStats } from '../../../usecases/GetStats.js'
 import { makeWorkoutSession } from '../../factories/index.js'
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    workoutPlan: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    workoutDay: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-    },
-    workoutSession: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-      findUniqueOrThrow: vi.fn(),
-    },
-    userTrainData: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-    },
-    $transaction: vi.fn(),
-  },
-}))
-
-vi.mock('../../../lib/db.js', () => ({ prisma: prismaMock }))
-
 describe('GetStats', () => {
-  const useCase = new GetStats()
+  let useCase: GetStats
+  let workoutSessionRepoMock: vi.Mocked<IWorkoutSessionRepository>
 
   const defaultInput = {
     userId: 'user-id-1',
@@ -47,11 +15,18 @@ describe('GetStats', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    workoutSessionRepoMock = {
+      findById: vi.fn(),
+      findActiveSessionForDay: vi.fn(),
+      findSessionsInPeriod: vi.fn(),
+      create: vi.fn(),
+      markAsCompleted: vi.fn()
+    }
+    useCase = new GetStats(workoutSessionRepoMock)
   })
 
   it('deve retornar todos os valores zerados quando não há sessões no período', async () => {
-    prismaMock.workoutSession.findMany.mockResolvedValue([])
+    workoutSessionRepoMock.findSessionsInPeriod.mockResolvedValue([])
 
     const result = await useCase.execute(defaultInput)
 
@@ -62,7 +37,7 @@ describe('GetStats', () => {
   })
 
   it('deve retornar workoutStreak=0 quando não há sessões completas', async () => {
-    prismaMock.workoutSession.findMany.mockResolvedValue([])
+    workoutSessionRepoMock.findSessionsInPeriod.mockResolvedValue([])
 
     const result = await useCase.execute(defaultInput)
 
@@ -82,7 +57,7 @@ describe('GetStats', () => {
         completedAt: null
       })
     ]
-    prismaMock.workoutSession.findMany
+    workoutSessionRepoMock.findSessionsInPeriod
       .mockResolvedValueOnce(sessions)
       .mockResolvedValueOnce([])
 
@@ -102,7 +77,7 @@ describe('GetStats', () => {
       startedAt: new Date('2025-06-02T10:00:00Z'),
       completedAt: new Date('2025-06-02T12:00:00Z')
     })
-    prismaMock.workoutSession.findMany
+    workoutSessionRepoMock.findSessionsInPeriod
       .mockResolvedValueOnce([session])
       .mockResolvedValueOnce([session])
 
@@ -126,7 +101,7 @@ describe('GetStats', () => {
         completedAt: null
       })
     ]
-    prismaMock.workoutSession.findMany
+    workoutSessionRepoMock.findSessionsInPeriod
       .mockResolvedValueOnce(sessions)
       .mockResolvedValueOnce([sessions[0]])
 
@@ -141,7 +116,7 @@ describe('GetStats', () => {
       startedAt: new Date('2025-06-02T10:00:00Z'),
       completedAt: new Date('2025-06-02T11:00:00Z')
     })
-    prismaMock.workoutSession.findMany
+    workoutSessionRepoMock.findSessionsInPeriod
       .mockResolvedValueOnce([session])
       .mockResolvedValueOnce([session])
 

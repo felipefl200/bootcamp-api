@@ -1,4 +1,4 @@
-import { prisma } from '../lib/db.js'
+import { IWorkoutPlanRepository } from '../repositories/interfaces/IWorkoutPlanRepository.js'
 
 interface InputDto {
   userId: string
@@ -14,17 +14,10 @@ interface OutputDto {
 }
 
 export class ListWorkoutPlans {
+  constructor(private workoutPlanRepository: IWorkoutPlanRepository) {}
+
   async execute(dto: InputDto): Promise<OutputDto> {
-    const plans = await prisma.workoutPlan.findMany({
-      where: { userId: dto.userId },
-      select: {
-        id: true,
-        name: true,
-        isActive: true,
-        createdAt: true
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+    const plans = await this.workoutPlanRepository.findManyByUserId(dto.userId)
 
     return { workoutPlans: plans }
   }

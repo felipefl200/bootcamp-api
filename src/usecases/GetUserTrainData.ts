@@ -1,4 +1,4 @@
-import { prisma } from '../lib/db.js'
+import { IUserTrainDataRepository } from '../repositories/interfaces/IUserTrainDataRepository.js'
 
 interface InputDto {
   userId: string
@@ -14,11 +14,12 @@ interface OutputDto {
 }
 
 export class GetUserTrainData {
+  constructor(private userTrainDataRepository: IUserTrainDataRepository) {}
+
   async execute(dto: InputDto): Promise<OutputDto | null> {
-    const trainData = await prisma.userTrainData.findUnique({
-      where: { userId: dto.userId },
-      include: { user: { select: { name: true } } }
-    })
+    const trainData = await this.userTrainDataRepository.findByUserId(
+      dto.userId
+    )
 
     if (!trainData) {
       return null

@@ -3,8 +3,10 @@ import dayjs from 'dayjs'
 import {
   BadRequestError,
   NotFoundError,
-  UnauthorizedError} from '../errors/index.js'
-import { prisma } from '../lib/db.js'
+  UnauthorizedError
+} from '../errors/index.js'
+import { IWorkoutPlanRepository } from '../repositories/interfaces/IWorkoutPlanRepository.js'
+import { IWorkoutSessionRepository } from '../repositories/interfaces/IWorkoutSessionRepository.js'
 
 interface InputDto {
   userId: string
@@ -21,15 +23,15 @@ interface OutputDto {
 }
 
 export class UpdateWorkoutSession {
+  constructor(
+    private workoutPlanRepository: IWorkoutPlanRepository,
+    private workoutSessionRepository: IWorkoutSessionRepository
+  ) {}
+
   async execute(dto: InputDto): Promise<OutputDto> {
-    const workoutPlan = await prisma.workoutPlan.findUnique({
-      where: { id: dto.workoutPlanId },
-      include: {
-        workoutDays: {
-          where: { id: dto.workoutDayId }
-        }
-      }
-    })
+    const workoutPlan = await this.workoutPlanRepository.findByIdWithDays(
+      dto.workoutPlanId
+    )
 
     if (!workoutPlan) {
       throw new NotFoundError('Workout plan not found')
@@ -41,15 +43,18 @@ export class UpdateWorkoutSession {
       )
     }
 
-    if (workoutPlan.workoutDays.length === 0) {
+    const dayExists = workoutPlan.workoutDays.some(
+      (day) => day.id === dto.workoutDayId
+    )
+    if (!dayExists) {
       throw new BadRequestError(
         'Workout day does not belong to this workout plan'
       )
     }
 
-    const session = await prisma.workoutSession.findUnique({
-      where: { id: dto.workoutSessionId }
-    })
+    const session = await this.workoutSessionRepository.findById(
+      dto.workoutSessionId
+    )
 
     if (!session) {
       throw new NotFoundError('Workout session not found')
@@ -61,12 +66,11 @@ export class UpdateWorkoutSession {
       )
     }
 
-    const updatedSession = await prisma.workoutSession.update({
-      where: { id: dto.workoutSessionId },
-      data: {
-        completedAt: dayjs(dto.completedAt).toDate()
-      }
-    })
+    const updatedSession = await this.workoutSessionRepository.markAsCompleted(
+      dto.workoutSessionId,
+      session.startedAt,
+      dayjs(dto.completedAt).toDate()
+    )
 
     return {
       id: updatedSession.id,

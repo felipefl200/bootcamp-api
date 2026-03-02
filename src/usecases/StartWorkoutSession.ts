@@ -5,7 +5,9 @@ import {
   UnauthorizedError,
   WorkoutPlanNotActiveError
 } from '../errors/index.js'
-import { prisma } from '../lib/db.js'
+import { IWorkoutDayRepository } from '../repositories/interfaces/IWorkoutDayRepository.js'
+import { IWorkoutPlanRepository } from '../repositories/interfaces/IWorkoutPlanRepository.js'
+import { IWorkoutSessionRepository } from '../repositories/interfaces/IWorkoutSessionRepository.js'
 
 interface InputDto {
   userId: string
@@ -18,10 +20,16 @@ interface OutputDto {
 }
 
 export class StartWorkoutSession {
+  constructor(
+    private workoutPlanRepository: IWorkoutPlanRepository,
+    private workoutDayRepository: IWorkoutDayRepository,
+    private workoutSessionRepository: IWorkoutSessionRepository
+  ) {}
+
   async execute(dto: InputDto): Promise<OutputDto> {
-    const workoutPlan = await prisma.workoutPlan.findUnique({
-      where: { id: dto.workoutPlanId }
-    })
+    const workoutPlan = await this.workoutPlanRepository.findById(
+      dto.workoutPlanId
+    )
 
     if (!workoutPlan) {
       throw new NotFoundError('Workout plan not found')
@@ -37,9 +45,9 @@ export class StartWorkoutSession {
       throw new WorkoutPlanNotActiveError('WorkoutPlanNotActiveError')
     }
 
-    const workoutDay = await prisma.workoutDay.findUnique({
-      where: { id: dto.workoutDayId }
-    })
+    const workoutDay = await this.workoutDayRepository.findById(
+      dto.workoutDayId
+    )
 
     if (!workoutDay) {
       throw new NotFoundError('Workout day not found')
@@ -51,24 +59,18 @@ export class StartWorkoutSession {
       )
     }
 
-    // Checking if there is already an active session
-    const activeSession = await prisma.workoutSession.findFirst({
-      where: {
-        workoutDayId: dto.workoutDayId,
-        completedAt: null
-      }
-    })
+    const activeSession =
+      await this.workoutSessionRepository.findActiveSessionForDay(
+        dto.workoutDayId
+      )
 
     if (activeSession) {
       throw new ConflictError('A session is already active for this day')
     }
 
-    const workoutSession = await prisma.workoutSession.create({
-      data: {
-        startedAt: new Date(),
-        workoutDayId: dto.workoutDayId
-      }
-    })
+    const workoutSession = await this.workoutSessionRepository.create(
+      dto.workoutDayId
+    )
 
     return {
       userWorkoutSessionId: workoutSession.id

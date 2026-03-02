@@ -1,15 +1,15 @@
-import { fromNodeHeaders } from 'better-auth/node'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 
-import { NotFoundError } from '../errors/index.js'
 import {
-  BadRequestError,
-  ConflictError,
-  UnauthorizedError,
-  WorkoutPlanNotActiveError
-} from '../errors/index.js'
-import { auth } from '../lib/auth.js'
+  makeCreateWorkoutPlanController,
+  makeGetWorkoutDayController,
+  makeGetWorkoutPlanController
+} from '../factories/makeWorkoutPlanController.js'
+import {
+  makeStartWorkoutSessionController,
+  makeUpdateWorkoutSessionController
+} from '../factories/makeWorkoutSessionController.js'
 import {
   CreateWorkoutPlanParamsSchema,
   ErrorSchema,
@@ -24,11 +24,6 @@ import {
   UpdateWorkoutSessionResponseSchema,
   WorkoutPlanSchema
 } from '../schemas/index.js'
-import { CreateWorkoutPlan } from '../usecases/CreateWorkoutPlan.js'
-import { GetWorkoutDay } from '../usecases/GetWorkoutDay.js'
-import { GetWorkoutPlan } from '../usecases/GetWorkoutPlan.js'
-import { StartWorkoutSession } from '../usecases/StartWorkoutSession.js'
-import { UpdateWorkoutSession } from '../usecases/UpdateWorkoutSession.js'
 
 export async function workoutPlanRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().route({
@@ -47,43 +42,8 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
       }
     },
     handler: async (request, reply) => {
-      try {
-        const authSession = await auth.api.getSession({
-          headers: fromNodeHeaders(request.headers)
-        })
-
-        if (!authSession || !authSession.user || !authSession.session) {
-          return reply.status(401).send({
-            error: 'Unauthorized',
-            code: 'UNAUTHORIZED'
-          })
-        }
-
-        const createWorkoutPlan = new CreateWorkoutPlan()
-
-        const result = await createWorkoutPlan.execute({
-          userId: authSession.user.id,
-          sessionId: authSession.session.id,
-          name: request.body.name,
-          workoutDays: request.body.workoutDays
-        })
-
-        return reply.status(201).send(result)
-      } catch (error) {
-        app.log.error(error)
-
-        if (error instanceof NotFoundError) {
-          return reply.status(404).send({
-            error: error.message,
-            code: 'NOT_FOUND_ERROR'
-          })
-        }
-
-        return reply.status(500).send({
-          error: 'Internal server error',
-          code: 'INTERNAL_SERVER_ERROR'
-        })
-      }
+      const controller = makeCreateWorkoutPlanController()
+      return controller.handle(request as any, reply)
     }
   })
 
@@ -104,71 +64,8 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
       }
     },
     handler: async (request, reply) => {
-      try {
-        const authSession = await auth.api.getSession({
-          headers: fromNodeHeaders(request.headers)
-        })
-
-        if (!authSession || !authSession.user) {
-          return reply.status(401).send({
-            error: 'Unauthorized',
-            code: 'UNAUTHORIZED'
-          })
-        }
-
-        const startWorkoutSession = new StartWorkoutSession()
-
-        const result = await startWorkoutSession.execute({
-          userId: authSession.user.id,
-          workoutPlanId: request.params.id,
-          workoutDayId: request.params.dayId
-        })
-
-        return reply.status(201).send(result)
-      } catch (error) {
-        app.log.error(error)
-
-        if (error instanceof NotFoundError) {
-          return reply.status(404).send({
-            error: error.message,
-            code: 'NOT_FOUND_ERROR'
-          })
-        }
-
-        if (error instanceof UnauthorizedError) {
-          return reply.status(401).send({
-            error: error.message,
-            code: 'UNAUTHORIZED_ERROR'
-          })
-        }
-
-        if (error instanceof BadRequestError) {
-          return reply.status(400).send({
-            error: error.message,
-            code: 'BAD_REQUEST_ERROR'
-          })
-        }
-
-        if (error instanceof ConflictError) {
-          return reply.status(409).send({
-            error: error.message,
-            code: 'CONFLICT_ERROR'
-          })
-        }
-
-        if (error instanceof WorkoutPlanNotActiveError) {
-          return reply.status(400).send({
-            error: error.message,
-            code: 'WORKOUT_PLAN_NOT_ACTIVE_ERROR'
-          })
-        }
-
-        return reply.status(500).send({
-          error:
-            error instanceof Error ? error.message : 'Internal server error',
-          code: 'INTERNAL_SERVER_ERROR'
-        })
-      }
+      const controller = makeStartWorkoutSessionController()
+      return controller.handle(request as any, reply)
     }
   })
 
@@ -189,59 +86,8 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
       }
     },
     handler: async (request, reply) => {
-      try {
-        const authSession = await auth.api.getSession({
-          headers: fromNodeHeaders(request.headers)
-        })
-
-        if (!authSession || !authSession.user) {
-          return reply.status(401).send({
-            error: 'Unauthorized',
-            code: 'UNAUTHORIZED'
-          })
-        }
-
-        const updateWorkoutSession = new UpdateWorkoutSession()
-
-        const result = await updateWorkoutSession.execute({
-          userId: authSession.user.id,
-          workoutPlanId: request.params.id,
-          workoutDayId: request.params.dayId,
-          workoutSessionId: request.params.sessionId,
-          completedAt: request.body.completedAt
-        })
-
-        return reply.status(200).send(result)
-      } catch (error) {
-        app.log.error(error)
-
-        if (error instanceof NotFoundError) {
-          return reply.status(404).send({
-            error: error.message,
-            code: 'NOT_FOUND_ERROR'
-          })
-        }
-
-        if (error instanceof UnauthorizedError) {
-          return reply.status(401).send({
-            error: error.message,
-            code: 'UNAUTHORIZED_ERROR'
-          })
-        }
-
-        if (error instanceof BadRequestError) {
-          return reply.status(400).send({
-            error: error.message,
-            code: 'BAD_REQUEST_ERROR'
-          })
-        }
-
-        return reply.status(500).send({
-          error:
-            error instanceof Error ? error.message : 'Internal server error',
-          code: 'INTERNAL_SERVER_ERROR'
-        })
-      }
+      const controller = makeUpdateWorkoutSessionController()
+      return controller.handle(request as any, reply)
     }
   })
 
@@ -260,49 +106,8 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
       }
     },
     handler: async (request, reply) => {
-      try {
-        const authSession = await auth.api.getSession({
-          headers: fromNodeHeaders(request.headers)
-        })
-
-        if (!authSession || !authSession.user) {
-          return reply.status(401).send({
-            error: 'Unauthorized',
-            code: 'UNAUTHORIZED'
-          })
-        }
-
-        const getWorkoutPlan = new GetWorkoutPlan()
-
-        const result = await getWorkoutPlan.execute({
-          userId: authSession.user.id,
-          workoutPlanId: request.params.id
-        })
-
-        return reply.status(200).send(result)
-      } catch (error) {
-        app.log.error(error)
-
-        if (error instanceof NotFoundError) {
-          return reply.status(404).send({
-            error: error.message,
-            code: 'NOT_FOUND_ERROR'
-          })
-        }
-
-        if (error instanceof UnauthorizedError) {
-          return reply.status(401).send({
-            error: error.message,
-            code: 'UNAUTHORIZED_ERROR'
-          })
-        }
-
-        return reply.status(500).send({
-          error:
-            error instanceof Error ? error.message : 'Internal server error',
-          code: 'INTERNAL_SERVER_ERROR'
-        })
-      }
+      const controller = makeGetWorkoutPlanController()
+      return controller.handle(request as any, reply)
     }
   })
 
@@ -321,50 +126,8 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
       }
     },
     handler: async (request, reply) => {
-      try {
-        const authSession = await auth.api.getSession({
-          headers: fromNodeHeaders(request.headers)
-        })
-
-        if (!authSession || !authSession.user) {
-          return reply.status(401).send({
-            error: 'Unauthorized',
-            code: 'UNAUTHORIZED'
-          })
-        }
-
-        const getWorkoutDay = new GetWorkoutDay()
-
-        const result = await getWorkoutDay.execute({
-          userId: authSession.user.id,
-          workoutPlanId: request.params.id,
-          workoutDayId: request.params.dayId
-        })
-
-        return reply.status(200).send(result)
-      } catch (error) {
-        app.log.error(error)
-
-        if (error instanceof NotFoundError) {
-          return reply.status(404).send({
-            error: error.message,
-            code: 'NOT_FOUND_ERROR'
-          })
-        }
-
-        if (error instanceof UnauthorizedError) {
-          return reply.status(401).send({
-            error: error.message,
-            code: 'UNAUTHORIZED_ERROR'
-          })
-        }
-
-        return reply.status(500).send({
-          error:
-            error instanceof Error ? error.message : 'Internal server error',
-          code: 'INTERNAL_SERVER_ERROR'
-        })
-      }
+      const controller = makeGetWorkoutDayController()
+      return controller.handle(request as any, reply)
     }
   })
 }

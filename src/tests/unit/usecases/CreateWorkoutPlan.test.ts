@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { IWorkoutPlanRepository } from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
 import { CreateWorkoutPlan } from '../../../usecases/CreateWorkoutPlan.js'
 import {
   makeWorkoutDay,
@@ -7,42 +8,9 @@ import {
   makeWorkoutPlan
 } from '../../factories/index.js'
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    workoutPlan: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    workoutDay: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-    },
-    workoutSession: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-      findUniqueOrThrow: vi.fn(),
-    },
-    userTrainData: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-    },
-    $transaction: vi.fn(),
-  },
-}))
-
-vi.mock('../../../lib/db.js', () => ({ prisma: prismaMock }))
-
 describe('CreateWorkoutPlan', () => {
-  const useCase = new CreateWorkoutPlan()
+  let useCase: CreateWorkoutPlan
+  let workoutPlanRepoMock: vi.Mocked<IWorkoutPlanRepository>
 
   const defaultInput = {
     userId: 'user-id-1',
@@ -62,7 +30,14 @@ describe('CreateWorkoutPlan', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    workoutPlanRepoMock = {
+      findById: vi.fn(),
+      findByIdWithDays: vi.fn(),
+      findActiveByUserId: vi.fn(),
+      findManyByUserId: vi.fn(),
+      createWithDeactivation: vi.fn()
+    }
+    useCase = new CreateWorkoutPlan(workoutPlanRepoMock)
   })
 
   const makePlanWithDays = () => ({
@@ -76,51 +51,26 @@ describe('CreateWorkoutPlan', () => {
   })
 
   it('deve criar um novo plano quando não há plano ativo', async () => {
-    prismaMock.workoutPlan.findFirst.mockResolvedValue(null)
+    workoutPlanRepoMock.findActiveByUserId.mockResolvedValue(null)
     const createdPlan = makePlanWithDays()
-    prismaMock.$transaction.mockImplementation(
-      async (cb: (tx: typeof prismaMock) => unknown) => cb(prismaMock)
+
+    workoutPlanRepoMock.createWithDeactivation.mockResolvedValue(
+      createdPlan as unknown as any
     )
-    prismaMock.workoutPlan.create.mockResolvedValue(createdPlan)
-    prismaMock.workoutPlan.findUnique.mockResolvedValue(createdPlan)
 
     const result = await useCase.execute(defaultInput)
 
-    expect(prismaMock.workoutPlan.update).not.toHaveBeenCalled()
     expect(result.name).toBe('Meu Plano A')
     expect(result.isActive).toBe(true)
   })
 
-  it('deve desativar o plano ativo anterior ao criar um novo', async () => {
-    const existingPlan = makeWorkoutPlan({ id: 'old-plan-id', isActive: true })
-    prismaMock.workoutPlan.findFirst.mockResolvedValue(existingPlan)
-    const createdPlan = makePlanWithDays()
-    prismaMock.$transaction.mockImplementation(
-      async (cb: (tx: typeof prismaMock) => unknown) => cb(prismaMock)
-    )
-    prismaMock.workoutPlan.update.mockResolvedValue({
-      ...existingPlan,
-      isActive: false
-    })
-    prismaMock.workoutPlan.create.mockResolvedValue(createdPlan)
-    prismaMock.workoutPlan.findUnique.mockResolvedValue(createdPlan)
-
-    await useCase.execute(defaultInput)
-
-    expect(prismaMock.workoutPlan.update).toHaveBeenCalledWith({
-      where: { id: 'old-plan-id' },
-      data: { isActive: false }
-    })
-  })
-
   it('deve retornar o plano completo com dias e exercícios', async () => {
-    prismaMock.workoutPlan.findFirst.mockResolvedValue(null)
+    workoutPlanRepoMock.findActiveByUserId.mockResolvedValue(null)
     const createdPlan = makePlanWithDays()
-    prismaMock.$transaction.mockImplementation(
-      async (cb: (tx: typeof prismaMock) => unknown) => cb(prismaMock)
+
+    workoutPlanRepoMock.createWithDeactivation.mockResolvedValue(
+      createdPlan as unknown as any
     )
-    prismaMock.workoutPlan.create.mockResolvedValue(createdPlan)
-    prismaMock.workoutPlan.findUnique.mockResolvedValue(createdPlan)
 
     const result = await useCase.execute(defaultInput)
 

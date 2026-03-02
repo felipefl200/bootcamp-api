@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NotFoundError, UnauthorizedError } from '../../../errors/index.js'
+import { IWorkoutDayRepository } from '../../../repositories/interfaces/IWorkoutDayRepository.js'
+import { IWorkoutPlanRepository } from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
 import { GetWorkoutDay } from '../../../usecases/GetWorkoutDay.js'
 import {
   makeWorkoutDay,
@@ -9,42 +11,10 @@ import {
   makeWorkoutSession
 } from '../../factories/index.js'
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    workoutPlan: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    workoutDay: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-    },
-    workoutSession: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-      findUniqueOrThrow: vi.fn(),
-    },
-    userTrainData: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-    },
-    $transaction: vi.fn(),
-  },
-}))
-
-vi.mock('../../../lib/db.js', () => ({ prisma: prismaMock }))
-
 describe('GetWorkoutDay', () => {
-  const useCase = new GetWorkoutDay()
+  let useCase: GetWorkoutDay
+  let workoutPlanRepoMock: vi.Mocked<IWorkoutPlanRepository>
+  let workoutDayRepoMock: vi.Mocked<IWorkoutDayRepository>
 
   const defaultInput = {
     userId: 'user-id-1',
@@ -53,20 +23,34 @@ describe('GetWorkoutDay', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    workoutPlanRepoMock = {
+      findById: vi.fn(),
+      findByIdWithDays: vi.fn(),
+      findActiveByUserId: vi.fn(),
+      findManyByUserId: vi.fn(),
+      createWithDeactivation: vi.fn()
+    }
+
+    workoutDayRepoMock = {
+      findById: vi.fn(),
+      findByIdWithExercises: vi.fn(),
+      findByIdWithExercisesAndSessions: vi.fn()
+    }
+
+    useCase = new GetWorkoutDay(workoutPlanRepoMock, workoutDayRepoMock)
   })
 
   it('deve lançar NotFoundError quando o plano não existe', async () => {
-    prismaMock.workoutPlan.findUnique.mockResolvedValue(null)
+    workoutPlanRepoMock.findById.mockResolvedValue(null)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(NotFoundError)
   })
 
   it('deve lançar UnauthorizedError quando o userId não é o dono do plano', async () => {
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
+    workoutPlanRepoMock.findById.mockResolvedValue({
       ...makeWorkoutPlan({ userId: 'outro-user' }),
       workoutDays: []
-    })
+    } as unknown as any)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(
       UnauthorizedError
@@ -74,10 +58,12 @@ describe('GetWorkoutDay', () => {
   })
 
   it('deve lançar NotFoundError quando o dia não é encontrado no plano', async () => {
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
+    workoutPlanRepoMock.findById.mockResolvedValue({
       ...makeWorkoutPlan(),
       workoutDays: []
-    })
+    } as unknown as any)
+
+    workoutDayRepoMock.findByIdWithExercisesAndSessions.mockResolvedValue(null)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow(NotFoundError)
   })
@@ -89,16 +75,12 @@ describe('GetWorkoutDay', () => {
       completedAt: new Date('2025-06-01T11:30:00Z')
     })
 
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
-      ...makeWorkoutPlan(),
-      workoutDays: [
-        {
-          ...makeWorkoutDay(),
-          workoutExercises: [exercise],
-          workoutSessions: [session]
-        }
-      ]
-    })
+    workoutPlanRepoMock.findById.mockResolvedValue(makeWorkoutPlan() as unknown as any)
+    workoutDayRepoMock.findByIdWithExercisesAndSessions.mockResolvedValue({
+      ...makeWorkoutDay({ workoutPlanId: 'plan-id-1' }),
+      workoutExercises: [exercise],
+      workoutSessions: [session]
+    } as unknown as any)
 
     const result = await useCase.execute(defaultInput)
 
@@ -117,16 +99,12 @@ describe('GetWorkoutDay', () => {
   it('deve omitir completedAt quando a sessão não está concluída', async () => {
     const session = makeWorkoutSession({ completedAt: null })
 
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
-      ...makeWorkoutPlan(),
-      workoutDays: [
-        {
-          ...makeWorkoutDay(),
-          workoutExercises: [],
-          workoutSessions: [session]
-        }
-      ]
-    })
+    workoutPlanRepoMock.findById.mockResolvedValue(makeWorkoutPlan() as unknown as any)
+    workoutDayRepoMock.findByIdWithExercisesAndSessions.mockResolvedValue({
+      ...makeWorkoutDay({ workoutPlanId: 'plan-id-1' }),
+      workoutExercises: [],
+      workoutSessions: [session]
+    } as unknown as any)
 
     const result = await useCase.execute(defaultInput)
 
@@ -138,16 +116,12 @@ describe('GetWorkoutDay', () => {
     // set=3, rep=12, restTime=90 → 12*3*5 + 90*3 = 180 + 270 = 450s
     const exercise = makeWorkoutExercise({ set: 3, rep: 12, restTime: 90 })
 
-    prismaMock.workoutPlan.findUnique.mockResolvedValue({
-      ...makeWorkoutPlan(),
-      workoutDays: [
-        {
-          ...makeWorkoutDay(),
-          workoutExercises: [exercise],
-          workoutSessions: []
-        }
-      ]
-    })
+    workoutPlanRepoMock.findById.mockResolvedValue(makeWorkoutPlan() as unknown as any)
+    workoutDayRepoMock.findByIdWithExercisesAndSessions.mockResolvedValue({
+      ...makeWorkoutDay({ workoutPlanId: 'plan-id-1' }),
+      workoutExercises: [exercise],
+      workoutSessions: []
+    } as unknown as any)
 
     const result = await useCase.execute(defaultInput)
 

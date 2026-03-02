@@ -1,53 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { IWorkoutPlanRepository } from '../../../repositories/interfaces/IWorkoutPlanRepository.js'
 import { ListWorkoutPlans } from '../../../usecases/ListWorkoutPlans.js'
 import { makeWorkoutPlan } from '../../factories/index.js'
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    workoutPlan: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    workoutDay: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-    },
-    workoutSession: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-      findUniqueOrThrow: vi.fn(),
-    },
-    userTrainData: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-    },
-    $transaction: vi.fn(),
-  },
-}))
-
-vi.mock('../../../lib/db.js', () => ({ prisma: prismaMock }))
-
 describe('ListWorkoutPlans', () => {
-  const useCase = new ListWorkoutPlans()
+  let useCase: ListWorkoutPlans
+  let workoutPlanRepoMock: vi.Mocked<IWorkoutPlanRepository>
 
   const defaultInput = { userId: 'user-id-1' }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    workoutPlanRepoMock = {
+      findById: vi.fn(),
+      findByIdWithDays: vi.fn(),
+      findActiveByUserId: vi.fn(),
+      findManyByUserId: vi.fn(),
+      createWithDeactivation: vi.fn()
+    }
+
+    useCase = new ListWorkoutPlans(workoutPlanRepoMock)
   })
 
   it('deve retornar lista vazia quando não há planos', async () => {
-    prismaMock.workoutPlan.findMany.mockResolvedValue([])
+    workoutPlanRepoMock.findManyByUserId.mockResolvedValue([])
 
     const result = await useCase.execute(defaultInput)
 
@@ -69,7 +45,7 @@ describe('ListWorkoutPlans', () => {
         createdAt: new Date('2025-05-01T00:00:00Z')
       })
     ]
-    prismaMock.workoutPlan.findMany.mockResolvedValue(plans)
+    workoutPlanRepoMock.findManyByUserId.mockResolvedValue(plans)
 
     const result = await useCase.execute(defaultInput)
 
@@ -80,15 +56,13 @@ describe('ListWorkoutPlans', () => {
     expect(result.workoutPlans[1].isActive).toBe(false)
   })
 
-  it('deve chamar o Prisma com os parâmetros corretos', async () => {
-    prismaMock.workoutPlan.findMany.mockResolvedValue([])
+  it('deve chamar o Repo com os parâmetros corretos', async () => {
+    workoutPlanRepoMock.findManyByUserId.mockResolvedValue([])
 
     await useCase.execute(defaultInput)
 
-    expect(prismaMock.workoutPlan.findMany).toHaveBeenCalledWith({
-      where: { userId: 'user-id-1' },
-      select: { id: true, name: true, isActive: true, createdAt: true },
-      orderBy: { createdAt: 'desc' }
-    })
+    expect(workoutPlanRepoMock.findManyByUserId).toHaveBeenCalledWith(
+      'user-id-1'
+    )
   })
 })

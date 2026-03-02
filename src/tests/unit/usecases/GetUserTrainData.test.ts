@@ -1,53 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { IUserTrainDataRepository } from '../../../repositories/interfaces/IUserTrainDataRepository.js'
 import { GetUserTrainData } from '../../../usecases/GetUserTrainData.js'
 import { makeUserTrainData } from '../../factories/index.js'
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    workoutPlan: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    workoutDay: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-    },
-    workoutSession: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-      findUniqueOrThrow: vi.fn(),
-    },
-    userTrainData: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-    },
-    $transaction: vi.fn(),
-  },
-}))
-
-vi.mock('../../../lib/db.js', () => ({ prisma: prismaMock }))
-
 describe('GetUserTrainData', () => {
-  const useCase = new GetUserTrainData()
+  let useCase: GetUserTrainData
+  let userTrainDataRepositoryMock: vi.Mocked<IUserTrainDataRepository>
 
   const defaultInput = { userId: 'user-id-1' }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    userTrainDataRepositoryMock = {
+      findByUserId: vi.fn(),
+      upsert: vi.fn()
+    }
+    useCase = new GetUserTrainData(userTrainDataRepositoryMock)
   })
 
   it('deve retornar null quando os dados de treino não existem', async () => {
-    prismaMock.userTrainData.findUnique.mockResolvedValue(null)
+    userTrainDataRepositoryMock.findByUserId.mockResolvedValue(null)
 
     const result = await useCase.execute(defaultInput)
 
@@ -55,8 +27,8 @@ describe('GetUserTrainData', () => {
   })
 
   it('deve retornar os dados de treino com o nome do usuário', async () => {
-    prismaMock.userTrainData.findUnique.mockResolvedValue(
-      makeUserTrainData({ user: { name: 'Felipe' } })
+    userTrainDataRepositoryMock.findByUserId.mockResolvedValue(
+      makeUserTrainData({ user: { name: 'Felipe' } }) as unknown as any
     )
 
     const result = await useCase.execute(defaultInput)

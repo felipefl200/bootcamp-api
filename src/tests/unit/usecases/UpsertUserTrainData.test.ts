@@ -1,44 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { IUserRepository } from '../../../repositories/interfaces/IUserRepository.js'
+import { IUserTrainDataRepository } from '../../../repositories/interfaces/IUserTrainDataRepository.js'
 import { UpsertUserTrainData } from '../../../usecases/UpsertUserTrainData.js'
 import { makeUser, makeUserTrainData } from '../../factories/index.js'
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    workoutPlan: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    workoutDay: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-    },
-    workoutSession: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-      findUniqueOrThrow: vi.fn(),
-    },
-    userTrainData: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-    },
-    $transaction: vi.fn(),
-  },
-}))
-
-vi.mock('../../../lib/db.js', () => ({ prisma: prismaMock }))
-
 describe('UpsertUserTrainData', () => {
-  const useCase = new UpsertUserTrainData()
+  let useCase: UpsertUserTrainData
+  let userRepositoryMock: vi.Mocked<IUserRepository>
+  let userTrainDataRepositoryMock: vi.Mocked<IUserTrainDataRepository>
 
   const defaultInput = {
     userId: 'user-id-1',
@@ -49,21 +19,32 @@ describe('UpsertUserTrainData', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    userRepositoryMock = {
+      findById: vi.fn(),
+      findByIdOrThrow: vi.fn()
+    }
+    userTrainDataRepositoryMock = {
+      findByUserId: vi.fn(),
+      upsert: vi.fn()
+    }
+    useCase = new UpsertUserTrainData(
+      userRepositoryMock,
+      userTrainDataRepositoryMock
+    )
   })
 
   it('deve relançar o erro quando o usuário não for encontrado', async () => {
-    const prismaError = new Error('No User found')
-    prismaMock.user.findUniqueOrThrow.mockRejectedValue(prismaError)
+    const error = new Error('No User found')
+    userRepositoryMock.findByIdOrThrow.mockRejectedValue(error)
 
     await expect(useCase.execute(defaultInput)).rejects.toThrow('No User found')
   })
 
   it('deve criar e retornar os dados quando é a primeira vez', async () => {
-    prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+    userRepositoryMock.findByIdOrThrow.mockResolvedValue(
       makeUser({ name: 'Felipe' })
     )
-    prismaMock.userTrainData.upsert.mockResolvedValue(makeUserTrainData())
+    userTrainDataRepositoryMock.upsert.mockResolvedValue(makeUserTrainData())
 
     const result = await useCase.execute(defaultInput)
 
@@ -73,15 +54,15 @@ describe('UpsertUserTrainData', () => {
     expect(result.heightInCentimeters).toBe(175)
     expect(result.age).toBe(28)
     expect(result.bodyFatPercentage).toBe(0.15)
-    expect(prismaMock.userTrainData.upsert).toHaveBeenCalledOnce()
+    expect(userTrainDataRepositoryMock.upsert).toHaveBeenCalledOnce()
   })
 
   it('deve atualizar e retornar os dados atualizados', async () => {
     const updatedInput = { ...defaultInput, weightInGrams: 75000 }
-    prismaMock.user.findUniqueOrThrow.mockResolvedValue(
+    userRepositoryMock.findByIdOrThrow.mockResolvedValue(
       makeUser({ name: 'Felipe' })
     )
-    prismaMock.userTrainData.upsert.mockResolvedValue(
+    userTrainDataRepositoryMock.upsert.mockResolvedValue(
       makeUserTrainData({ weightInGrams: 75000 })
     )
 

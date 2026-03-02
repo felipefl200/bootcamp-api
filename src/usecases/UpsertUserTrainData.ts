@@ -1,4 +1,5 @@
-import { prisma } from '../lib/db.js'
+import { IUserRepository } from '../repositories/interfaces/IUserRepository.js'
+import { IUserTrainDataRepository } from '../repositories/interfaces/IUserTrainDataRepository.js'
 
 interface InputDto {
   userId: string
@@ -18,27 +19,20 @@ interface OutputDto {
 }
 
 export class UpsertUserTrainData {
-  async execute(dto: InputDto): Promise<OutputDto> {
-    const user = await prisma.user.findUniqueOrThrow({
-      where: { id: dto.userId },
-      select: { name: true }
-    })
+  constructor(
+    private userRepository: IUserRepository,
+    private userTrainDataRepository: IUserTrainDataRepository
+  ) {}
 
-    const trainData = await prisma.userTrainData.upsert({
-      where: { userId: dto.userId },
-      create: {
-        userId: dto.userId,
-        weightInGrams: dto.weightInGrams,
-        heightInCentimeters: dto.heightInCentimeters,
-        age: dto.age,
-        bodyFatPercentage: dto.bodyFatPercentage
-      },
-      update: {
-        weightInGrams: dto.weightInGrams,
-        heightInCentimeters: dto.heightInCentimeters,
-        age: dto.age,
-        bodyFatPercentage: dto.bodyFatPercentage
-      }
+  async execute(dto: InputDto): Promise<OutputDto> {
+    const user = await this.userRepository.findByIdOrThrow(dto.userId)
+
+    const trainData = await this.userTrainDataRepository.upsert({
+      userId: dto.userId,
+      weightInGrams: dto.weightInGrams,
+      heightInCentimeters: dto.heightInCentimeters,
+      age: dto.age,
+      bodyFatPercentage: dto.bodyFatPercentage
     })
 
     return {
