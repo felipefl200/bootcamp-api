@@ -15,10 +15,14 @@ import {
   ErrorSchema,
   StartWorkoutSessionParamsSchema,
   StartWorkoutSessionResponseSchema,
+  UpdateWorkoutSessionBodySchema,
+  UpdateWorkoutSessionParamsSchema,
+  UpdateWorkoutSessionResponseSchema,
   WorkoutPlanSchema
 } from '../schemas/index.js'
 import { CreateWorkoutPlan } from '../usecases/CreateWorkoutPlan.js'
 import { StartWorkoutSession } from '../usecases/StartWorkoutSession.js'
+import { UpdateWorkoutSession } from '../usecases/UpdateWorkoutSession.js'
 
 export async function workoutPlanRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().route({
@@ -150,6 +154,79 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
           return reply.status(400).send({
             error: error.message,
             code: 'WORKOUT_PLAN_NOT_ACTIVE_ERROR'
+          })
+        }
+
+        return reply.status(500).send({
+          error:
+            error instanceof Error ? error.message : 'Internal server error',
+          code: 'INTERNAL_SERVER_ERROR'
+        })
+      }
+    }
+  })
+
+  app.withTypeProvider<ZodTypeProvider>().route({
+    method: 'PATCH',
+    url: '/workout-plans/:id/days/:dayId/sessions/:sessionId',
+    schema: {
+      tags: ['Workout Plan'],
+      summary: 'Update a workout session',
+      params: UpdateWorkoutSessionParamsSchema,
+      body: UpdateWorkoutSessionBodySchema,
+      response: {
+        200: UpdateWorkoutSessionResponseSchema,
+        400: ErrorSchema,
+        401: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema
+      }
+    },
+    handler: async (request, reply) => {
+      try {
+        const authSession = await auth.api.getSession({
+          headers: fromNodeHeaders(request.headers)
+        })
+
+        if (!authSession || !authSession.user) {
+          return reply.status(401).send({
+            error: 'Unauthorized',
+            code: 'UNAUTHORIZED'
+          })
+        }
+
+        const updateWorkoutSession = new UpdateWorkoutSession()
+
+        const result = await updateWorkoutSession.execute({
+          userId: authSession.user.id,
+          workoutPlanId: request.params.id,
+          workoutDayId: request.params.dayId,
+          workoutSessionId: request.params.sessionId,
+          completedAt: request.body.completedAt
+        })
+
+        return reply.status(200).send(result)
+      } catch (error) {
+        app.log.error(error)
+
+        if (error instanceof NotFoundError) {
+          return reply.status(404).send({
+            error: error.message,
+            code: 'NOT_FOUND_ERROR'
+          })
+        }
+
+        if (error instanceof UnauthorizedError) {
+          return reply.status(401).send({
+            error: error.message,
+            code: 'UNAUTHORIZED_ERROR'
+          })
+        }
+
+        if (error instanceof BadRequestError) {
+          return reply.status(400).send({
+            error: error.message,
+            code: 'BAD_REQUEST_ERROR'
           })
         }
 
