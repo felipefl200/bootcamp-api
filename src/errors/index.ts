@@ -18,3 +18,17 @@ export class BadRequestError extends Error {
     this.name = 'BadRequestError'
   }
 }
+
+export class ConflictError extends Error {
+  constructor(message = 'Conflict') {
+    super(message)
+    this.name = 'ConflictError'
+  }
+}
+
+export class WorkoutPlanNotActiveError extends Error {
+  constructor(message = 'Workout plan is not active') {
+    super(message)
+    this.name = 'WorkoutPlanNotActiveError'
+  }
+}

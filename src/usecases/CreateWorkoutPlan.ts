@@ -1,8 +1,11 @@
+import crypto from 'node:crypto'
+
 import { NotFoundError } from '../errors/index.js'
 import { WeekDay } from '../generated/prisma/enums.js'
 import { prisma } from '../lib/db.js'
 
-export interface CreateWorkoutPlanInputDto {
+// Data Transfer Object
+interface InputDto {
   userId: string
   sessionId: string
   name: string
@@ -20,7 +23,7 @@ export interface CreateWorkoutPlanInputDto {
   }>
 }
 
-export interface CreateWorkoutPlanOutputDto {
+interface OutputDto {
   id: string
   name: string
   isActive: boolean
@@ -41,16 +44,14 @@ export interface CreateWorkoutPlanOutputDto {
 }
 
 export class CreateWorkoutPlan {
-  async execute(
-    dto: CreateWorkoutPlanInputDto
-  ): Promise<CreateWorkoutPlanOutputDto> {
+  async execute(dto: InputDto): Promise<OutputDto> {
     const existingWorkoutPlan = await prisma.workoutPlan.findFirst({
       where: {
         userId: dto.userId,
         isActive: true
       }
     })
-
+    // Transaction - Atomicidade
     return prisma.$transaction(async (tx) => {
       if (existingWorkoutPlan) {
         await tx.workoutPlan.update({
@@ -58,20 +59,25 @@ export class CreateWorkoutPlan {
           data: { isActive: false }
         })
       }
-
       const workoutPlan = await tx.workoutPlan.create({
         data: {
+          id: crypto.randomUUID(),
           name: dto.name,
           userId: dto.userId,
           isActive: true,
           workoutDays: {
-            create: dto.workoutDays.map((day) => ({
-              name: day.name,
-              weekDay: day.weekDay,
-              isRest: day.isRest,
-              sessionId: dto.sessionId,
+            create: dto.workoutDays.map((workoutDay) => ({
+              id: crypto.randomUUID(),
+              name: workoutDay.name,
+              weekDay: workoutDay.weekDay,
+              isRest: workoutDay.isRest,
+              coverImageUrl: null,
+              sessions: {
+                connect: { id: dto.sessionId }
+              },
               workoutExercises: {
-                create: day.workoutExercises.map((exercise) => ({
+                create: workoutDay.workoutExercises.map((exercise) => ({
+                  id: crypto.randomUUID(),
                   name: exercise.name,
                   order: exercise.order,
                   set: exercise.set,
@@ -83,7 +89,6 @@ export class CreateWorkoutPlan {
           }
         }
       })
-
       const result = await tx.workoutPlan.findUnique({
         where: { id: workoutPlan.id },
         include: {
@@ -94,11 +99,9 @@ export class CreateWorkoutPlan {
           }
         }
       })
-
       if (!result) {
-        throw new NotFoundError('Workout plan not found after creation')
+        throw new NotFoundError('Workout plan not found')
       }
-
       return {
         id: result.id,
         name: result.name,
@@ -106,7 +109,7 @@ export class CreateWorkoutPlan {
         workoutDays: result.workoutDays.map((day) => ({
           id: day.id,
           name: day.name,
-          weekDay: day.weekDay as WeekDay,
+          weekDay: day.weekDay,
           isRest: day.isRest,
           workoutExercises: day.workoutExercises.map((exercise) => ({
             id: exercise.id,
