@@ -13,6 +13,8 @@ import { auth } from '../lib/auth.js'
 import {
   CreateWorkoutPlanParamsSchema,
   ErrorSchema,
+  GetWorkoutDayParamsSchema,
+  GetWorkoutDayResponseSchema,
   GetWorkoutPlanParamsSchema,
   GetWorkoutPlanResponseSchema,
   StartWorkoutSessionParamsSchema,
@@ -23,6 +25,7 @@ import {
   WorkoutPlanSchema
 } from '../schemas/index.js'
 import { CreateWorkoutPlan } from '../usecases/CreateWorkoutPlan.js'
+import { GetWorkoutDay } from '../usecases/GetWorkoutDay.js'
 import { GetWorkoutPlan } from '../usecases/GetWorkoutPlan.js'
 import { StartWorkoutSession } from '../usecases/StartWorkoutSession.js'
 import { UpdateWorkoutSession } from '../usecases/UpdateWorkoutSession.js'
@@ -274,6 +277,68 @@ export async function workoutPlanRoutes(app: FastifyInstance) {
         const result = await getWorkoutPlan.execute({
           userId: authSession.user.id,
           workoutPlanId: request.params.id
+        })
+
+        return reply.status(200).send(result)
+      } catch (error) {
+        app.log.error(error)
+
+        if (error instanceof NotFoundError) {
+          return reply.status(404).send({
+            error: error.message,
+            code: 'NOT_FOUND_ERROR'
+          })
+        }
+
+        if (error instanceof UnauthorizedError) {
+          return reply.status(401).send({
+            error: error.message,
+            code: 'UNAUTHORIZED_ERROR'
+          })
+        }
+
+        return reply.status(500).send({
+          error:
+            error instanceof Error ? error.message : 'Internal server error',
+          code: 'INTERNAL_SERVER_ERROR'
+        })
+      }
+    }
+  })
+
+  app.withTypeProvider<ZodTypeProvider>().route({
+    method: 'GET',
+    url: '/workout-plans/:id/days/:dayId',
+    schema: {
+      tags: ['Workout Plan'],
+      summary: 'Get a workout day including exercises and sessions',
+      params: GetWorkoutDayParamsSchema,
+      response: {
+        200: GetWorkoutDayResponseSchema,
+        401: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema
+      }
+    },
+    handler: async (request, reply) => {
+      try {
+        const authSession = await auth.api.getSession({
+          headers: fromNodeHeaders(request.headers)
+        })
+
+        if (!authSession || !authSession.user) {
+          return reply.status(401).send({
+            error: 'Unauthorized',
+            code: 'UNAUTHORIZED'
+          })
+        }
+
+        const getWorkoutDay = new GetWorkoutDay()
+
+        const result = await getWorkoutDay.execute({
+          userId: authSession.user.id,
+          workoutPlanId: request.params.id,
+          workoutDayId: request.params.dayId
         })
 
         return reply.status(200).send(result)

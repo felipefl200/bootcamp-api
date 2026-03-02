@@ -52,16 +52,16 @@ export const CreateWorkoutPlanParamsSchema = z.object({
 })
 
 export const StartWorkoutSessionParamsSchema = z.object({
-  id: z.string().uuid(),
-  dayId: z.string().uuid()
+  id: z.uuid(),
+  dayId: z.uuid()
 })
 
 export const StartWorkoutSessionResponseSchema = z.object({
-  userWorkoutSessionId: z.string().cuid()
+  userWorkoutSessionId: z.cuid()
 })
 
 export const UpdateWorkoutSessionParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   dayId: z.string().uuid(),
   sessionId: z.string().cuid()
 })
@@ -71,9 +71,9 @@ export const UpdateWorkoutSessionBodySchema = z.object({
 })
 
 export const UpdateWorkoutSessionResponseSchema = z.object({
-  id: z.string().cuid(),
-  completedAt: z.string().datetime(),
-  startedAt: z.string().datetime()
+  id: z.cuid(),
+  completedAt: z.iso.datetime(),
+  startedAt: z.iso.datetime()
 })
 export const HomeParamsSchema = z.object({
   date: z.string().date()
@@ -118,6 +118,38 @@ export const GetWorkoutPlanResponseSchema = z.object({
       coverImageUrl: z.string().nullable(),
       estimatedDurationInSeconds: z.number(),
       exercisesCount: z.number()
+    })
+  )
+})
+export const GetWorkoutDayParamsSchema = z.object({
+  id: z.string().uuid(),
+  dayId: z.string().uuid()
+})
+
+export const GetWorkoutDayResponseSchema = z.object({
+  id: z.cuid(),
+  name: z.string(),
+  isRest: z.boolean(),
+  coverImageUrl: z.string().nullable(),
+  estimatedDurationInSeconds: z.number(),
+  exercises: z.array(
+    z.object({
+      id: z.string().cuid(),
+      name: z.string(),
+      order: z.number(),
+      set: z.number(),
+      rep: z.number(),
+      restTime: z.number(),
+      workoutDayId: z.string()
+    })
+  ),
+  weekDay: z.enum(WeekDay),
+  sessions: z.array(
+    z.object({
+      id: z.cuid(),
+      workoutDayId: z.string(),
+      startedAt: z.date().optional(),
+      completedAt: z.date().optional()
     })
   )
 })
