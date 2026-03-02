@@ -7,15 +7,15 @@ import { PrismaUserTrainDataRepository } from '../repositories/prisma/PrismaUser
 import { GetUserTrainData } from '../usecases/GetUserTrainData.js'
 import { UpsertUserTrainData } from '../usecases/UpsertUserTrainData.js'
 
+const userRepository = new PrismaUserRepository()
+const userTrainDataRepository = new PrismaUserTrainDataRepository()
+
 export const makeGetUserTrainDataController = () => {
-  const userTrainDataRepository = new PrismaUserTrainDataRepository()
   const useCase = new GetUserTrainData(userTrainDataRepository)
   return new GetUserTrainDataController(useCase)
 }
 
 export const makeUpsertUserTrainDataController = () => {
-  const userRepository = new PrismaUserRepository()
-  const userTrainDataRepository = new PrismaUserTrainDataRepository()
   const useCase = new UpsertUserTrainData(
     userRepository,
     userTrainDataRepository

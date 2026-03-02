@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, type Mocked,vi } from 'vitest'
 
 import { IWorkoutSessionRepository } from '../../../repositories/interfaces/IWorkoutSessionRepository.js'
 import { GetStats } from '../../../usecases/GetStats.js'
@@ -6,7 +6,7 @@ import { makeWorkoutSession } from '../../factories/index.js'
 
 describe('GetStats', () => {
   let useCase: GetStats
-  let workoutSessionRepoMock: vi.Mocked<IWorkoutSessionRepository>
+  let workoutSessionRepoMock: Mocked<IWorkoutSessionRepository>
 
   const defaultInput = {
     userId: 'user-id-1',

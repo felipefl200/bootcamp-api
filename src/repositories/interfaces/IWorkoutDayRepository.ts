@@ -2,7 +2,7 @@ import {
   WorkoutDay,
   WorkoutExercise,
   WorkoutSession
-} from '@prisma/client'
+} from '../../generated/prisma/client.js'
 
 export type WorkoutDayWithExercises = WorkoutDay & {
   workoutExercises: WorkoutExercise[]

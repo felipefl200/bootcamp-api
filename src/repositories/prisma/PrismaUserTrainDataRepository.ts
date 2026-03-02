@@ -1,5 +1,4 @@
-import { UserTrainData } from '@prisma/client'
-
+import { UserTrainData } from '../../generated/prisma/client.js'
 import { prisma } from '../../lib/db.js'
 import {
   IUserTrainDataRepository,

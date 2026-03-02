@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, type Mocked,vi } from 'vitest'
 
 import { IUserRepository } from '../../../repositories/interfaces/IUserRepository.js'
 import { IUserTrainDataRepository } from '../../../repositories/interfaces/IUserTrainDataRepository.js'
@@ -7,8 +7,8 @@ import { makeUser, makeUserTrainData } from '../../factories/index.js'
 
 describe('UpsertUserTrainData', () => {
   let useCase: UpsertUserTrainData
-  let userRepositoryMock: vi.Mocked<IUserRepository>
-  let userTrainDataRepositoryMock: vi.Mocked<IUserTrainDataRepository>
+  let userRepositoryMock: Mocked<IUserRepository>
+  let userTrainDataRepositoryMock: Mocked<IUserTrainDataRepository>
 
   const defaultInput = {
     userId: 'user-id-1',

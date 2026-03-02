@@ -1,0 +1,31 @@
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  name          String
+  workoutPlans  WorkoutPlan[]
+  emailVerified Boolean       @default(false)
+  image         String?
+  sessions      Session[]
+  accounts      Account[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
+
+  trainData UserTrainData?
+
+  @@map("user")
+}
+
+model UserTrainData {
+  id                  String @id @default(cuid())
+  weightInGrams       Int
+  heightInCentimeters Int
+  age                 Int
+  bodyFatPercentage   Float
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
+}

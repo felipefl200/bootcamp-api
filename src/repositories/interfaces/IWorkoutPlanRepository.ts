@@ -1,4 +1,4 @@
-import { WeekDay, WorkoutPlan } from '@prisma/client'
+import { WeekDay, WorkoutPlan } from '../../generated/prisma/client.js'
 
 export type CreateWorkoutPlanInput = {
   name: string
@@ -7,7 +7,7 @@ export type CreateWorkoutPlanInput = {
 }
 
 export type CreateWorkoutDayInput = {
-  name?: string | null
+  name: string
   weekDay: WeekDay
   isRest: boolean
   coverImageUrl?: string | null

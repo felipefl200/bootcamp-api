@@ -1,4 +1,4 @@
-import { WorkoutSession } from '@prisma/client'
+import { WorkoutSession } from '../../generated/prisma/client.js'
 
 export interface IWorkoutSessionRepository {
   findById(id: string): Promise<WorkoutSession | null>

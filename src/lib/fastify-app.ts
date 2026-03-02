@@ -7,6 +7,7 @@ import {
   validatorCompiler
 } from 'fastify-type-provider-zod'
 
+import { env } from '../env.js'
 import { aiRoutes } from '../routes/ai.js'
 import { authRoutes } from '../routes/auth.js'
 import { docsRoute } from '../routes/docs.js'
@@ -15,13 +16,16 @@ import { meRoutes } from '../routes/me.js'
 import { statsRoutes } from '../routes/stats.js'
 import { statusApiRoute } from '../routes/status-api.js'
 import { workoutPlanRoutes } from '../routes/workout-plan.js'
+import { errorHandler } from './errorHandler.js'
 
 export const buildApp = async () => {
   const app = Fastify({
-    logger: process.env.NODE_ENV === 'development'
+    logger: env.NODE_ENV === 'development'
   })
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
+
+  app.setErrorHandler(errorHandler)
 
   await app.register(fastifySwagger, {
     openapi: {
@@ -41,7 +45,7 @@ export const buildApp = async () => {
   })
 
   app.register(fastifyCors, {
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: [env.FRONTEND_URL, 'http://localhost:3000'],
     credentials: true
   })
 

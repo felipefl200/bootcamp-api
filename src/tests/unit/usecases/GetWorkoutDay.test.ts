@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, type Mocked,vi } from 'vitest'
 
 import { NotFoundError, UnauthorizedError } from '../../../errors/index.js'
 import {
@@ -16,8 +16,8 @@ import {
 
 describe('GetWorkoutDay', () => {
   let useCase: GetWorkoutDay
-  let workoutPlanRepoMock: vi.Mocked<IWorkoutPlanRepository>
-  let workoutDayRepoMock: vi.Mocked<IWorkoutDayRepository>
+  let workoutPlanRepoMock: Mocked<IWorkoutPlanRepository>
+  let workoutDayRepoMock: Mocked<IWorkoutDayRepository>
 
   const defaultInput = {
     userId: 'user-id-1',

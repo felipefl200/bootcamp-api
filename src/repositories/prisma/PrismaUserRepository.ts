@@ -1,5 +1,4 @@
-import { User } from '@prisma/client'
-
+import { User } from '../../generated/prisma/client.js'
 import { prisma } from '../../lib/db.js'
 import { IUserRepository } from '../interfaces/IUserRepository.js'
 

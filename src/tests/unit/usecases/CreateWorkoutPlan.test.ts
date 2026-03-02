@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, type Mocked,vi } from 'vitest'
 
 import {
   IWorkoutPlanRepository,
@@ -13,7 +13,7 @@ import {
 
 describe('CreateWorkoutPlan', () => {
   let useCase: CreateWorkoutPlan
-  let workoutPlanRepoMock: vi.Mocked<IWorkoutPlanRepository>
+  let workoutPlanRepoMock: Mocked<IWorkoutPlanRepository>
 
   const defaultInput = {
     userId: 'user-id-1',

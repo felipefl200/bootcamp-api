@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 
 import { IWorkoutSessionRepository } from '../repositories/interfaces/IWorkoutSessionRepository.js'
+import { calculateWorkoutStreak } from '../utils/workout.js'
 
 dayjs.extend(utc)
 
@@ -86,31 +87,10 @@ export class GetStats {
         ninetyDaysAgo,
         dayjs.utc().toDate()
       )
-    const recentCompletedOnly = recentCompletedSessions.filter(
-      (s) => s.completedAt !== null
+    const workoutStreak = calculateWorkoutStreak(
+      recentCompletedSessions,
+      dayjs.utc()
     )
-
-    let workoutStreak = 0
-    const targetDate = dayjs.utc()
-    const uniqueDates = new Set(
-      recentCompletedOnly.map((s) =>
-        dayjs.utc(s.startedAt).format('YYYY-MM-DD')
-      )
-    )
-    let currentDateToCheck = targetDate
-
-    if (uniqueDates.has(currentDateToCheck.format('YYYY-MM-DD'))) {
-      while (uniqueDates.has(currentDateToCheck.format('YYYY-MM-DD'))) {
-        workoutStreak++
-        currentDateToCheck = currentDateToCheck.subtract(1, 'day')
-      }
-    } else {
-      currentDateToCheck = currentDateToCheck.subtract(1, 'day')
-      while (uniqueDates.has(currentDateToCheck.format('YYYY-MM-DD'))) {
-        workoutStreak++
-        currentDateToCheck = currentDateToCheck.subtract(1, 'day')
-      }
-    }
 
     return {
       workoutStreak,

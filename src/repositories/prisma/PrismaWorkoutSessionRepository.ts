@@ -1,5 +1,4 @@
-import { WorkoutSession } from '@prisma/client'
-
+import { WorkoutSession } from '../../generated/prisma/client.js'
 import { prisma } from '../../lib/db.js'
 import { IWorkoutSessionRepository } from '../interfaces/IWorkoutSessionRepository.js'
 
@@ -46,7 +45,7 @@ export class PrismaWorkoutSessionRepository implements IWorkoutSessionRepository
 
   async create(workoutDayId: string): Promise<WorkoutSession> {
     return prisma.workoutSession.create({
-      data: { workoutDayId }
+      data: { workoutDayId, startedAt: new Date() }
     })
   }
 

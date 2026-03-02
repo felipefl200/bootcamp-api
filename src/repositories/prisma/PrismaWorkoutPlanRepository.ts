@@ -1,5 +1,4 @@
-import { WorkoutPlan } from '@prisma/client'
-
+import { WorkoutPlan } from '../../generated/prisma/client.js'
 import { prisma } from '../../lib/db.js'
 import {
   CreateWorkoutPlanPayload,
@@ -131,7 +130,7 @@ export class PrismaWorkoutPlanRepository implements IWorkoutPlanRepository {
             }
           }
         }
-      })
+      }) as unknown as WorkoutPlanFullData
     })
   }
 }

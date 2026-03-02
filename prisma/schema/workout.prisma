@@ -1,0 +1,69 @@
+model WorkoutPlan {
+  id       String  @id @default(cuid())
+  name     String
+  isActive Boolean @default(true)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  workoutDays WorkoutDay[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
+}
+
+model WorkoutSession {
+  id           String     @id @default(cuid())
+  workoutDayId String
+  workoutDay   WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  startedAt    DateTime
+  completedAt  DateTime?
+
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
+}
+
+enum WeekDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model WorkoutDay {
+  id            String  @id @default(cuid())
+  name          String
+  isRest        Boolean @default(false)
+  weekDay       WeekDay
+  coverImageUrl String?
+
+  workoutPlanId String
+  workoutPlan   WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+
+  workoutExercises WorkoutExercise[]
+
+  workoutSessions WorkoutSession[]
+  sessionId       String?
+  sessions        Session?         @relation(fields: [sessionId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
+}
+
+model WorkoutExercise {
+  id       String @id @default(cuid())
+  name     String
+  order    Int
+  set      Int
+  rep      Int
+  restTime Int
+
+  workoutDayId String
+  workoutDay   WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
+}

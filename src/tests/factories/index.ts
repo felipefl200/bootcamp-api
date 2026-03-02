@@ -3,11 +3,23 @@ import { WeekDay } from '../../generated/prisma/enums.js'
 // --- User ---
 
 export const makeUser = (
-  overrides?: Partial<{ id: string; name: string; email: string }>
+  overrides?: Partial<{
+    id: string
+    name: string
+    email: string
+    emailVerified: boolean
+    image: string | null
+    createdAt: Date
+    updatedAt: Date
+  }>
 ) => ({
   id: 'user-id-1',
   name: 'Felipe',
   email: 'felipe@example.com',
+  emailVerified: true,
+  image: null,
+  createdAt: new Date('2025-01-01T00:00:00Z'),
+  updatedAt: new Date('2025-01-01T00:00:00Z'),
   ...overrides
 })
 
@@ -15,6 +27,7 @@ export const makeUser = (
 
 export const makeUserTrainData = (
   overrides?: Partial<{
+    id: string
     userId: string
     weightInGrams: number
     heightInCentimeters: number
@@ -25,6 +38,7 @@ export const makeUserTrainData = (
     user: { name: string }
   }>
 ) => ({
+  id: 'train-data-id-1',
   userId: 'user-id-1',
   weightInGrams: 80000,
   heightInCentimeters: 175,
@@ -94,6 +108,7 @@ export const makeWorkoutDay = (
     isRest: boolean
     coverImageUrl: string | null
     workoutPlanId: string
+    sessionId: string | null
     createdAt: Date
     updatedAt: Date
     workoutExercises: ReturnType<typeof makeWorkoutExercise>[]
@@ -106,6 +121,7 @@ export const makeWorkoutDay = (
   isRest: false,
   coverImageUrl: null,
   workoutPlanId: 'plan-id-1',
+  sessionId: null,
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
   workoutExercises: [],

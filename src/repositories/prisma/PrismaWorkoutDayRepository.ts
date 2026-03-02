@@ -1,5 +1,4 @@
-import { WorkoutDay } from '@prisma/client'
-
+import { WorkoutDay } from '../../generated/prisma/client.js'
 import { prisma } from '../../lib/db.js'
 import {
   IWorkoutDayRepository,

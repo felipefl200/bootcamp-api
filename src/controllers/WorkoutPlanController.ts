@@ -2,7 +2,7 @@ import { fromNodeHeaders } from 'better-auth/node'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 
-import { NotFoundError, UnauthorizedError } from '../errors/index.js'
+import { UnauthorizedError } from '../errors/index.js'
 import { auth } from '../lib/auth.js'
 import { CreateWorkoutPlanParamsSchema } from '../schemas/index.js'
 import { CreateWorkoutPlan } from '../usecases/CreateWorkoutPlan.js'
@@ -16,29 +16,19 @@ export class ListWorkoutPlansController {
   constructor(private listWorkoutPlansUseCase: ListWorkoutPlans) {}
 
   async handle(request: FastifyRequest, reply: FastifyReply) {
-    try {
-      const authSession = await auth.api.getSession({
-        headers: fromNodeHeaders(request.headers)
-      })
+    const authSession = await auth.api.getSession({
+      headers: fromNodeHeaders(request.headers)
+    })
 
-      if (!authSession || !authSession.user) {
-        return reply
-          .status(401)
-          .send({ error: 'Unauthorized', code: 'UNAUTHORIZED' })
-      }
-
-      const result = await this.listWorkoutPlansUseCase.execute({
-        userId: authSession.user.id
-      })
-
-      return reply.status(200).send(result)
-    } catch (error) {
-      request.server.log.error(error)
-      return reply.status(500).send({
-        error: error instanceof Error ? error.message : 'Internal server error',
-        code: 'INTERNAL_SERVER_ERROR'
-      })
+    if (!authSession || !authSession.user) {
+      throw new UnauthorizedError()
     }
+
+    const result = await this.listWorkoutPlansUseCase.execute({
+      userId: authSession.user.id
+    })
+
+    return reply.status(200).send(result)
   }
 }
 
@@ -46,40 +36,23 @@ export class CreateWorkoutPlanController {
   constructor(private createWorkoutPlanUseCase: CreateWorkoutPlan) {}
 
   async handle(request: FastifyRequest, reply: FastifyReply) {
-    try {
-      const body = request.body as CreateWorkoutPlanBody
-      const authSession = await auth.api.getSession({
-        headers: fromNodeHeaders(request.headers)
-      })
+    const body = request.body as CreateWorkoutPlanBody
+    const authSession = await auth.api.getSession({
+      headers: fromNodeHeaders(request.headers)
+    })
 
-      if (!authSession || !authSession.user || !authSession.session) {
-        return reply
-          .status(401)
-          .send({ error: 'Unauthorized', code: 'UNAUTHORIZED' })
-      }
-
-      const result = await this.createWorkoutPlanUseCase.execute({
-        userId: authSession.user.id,
-        sessionId: authSession.session.id,
-        name: body.name,
-        workoutDays: body.workoutDays
-      })
-
-      return reply.status(201).send(result)
-    } catch (error) {
-      request.server.log.error(error)
-
-      if (error instanceof NotFoundError) {
-        return reply
-          .status(404)
-          .send({ error: error.message, code: 'NOT_FOUND_ERROR' })
-      }
-
-      return reply.status(500).send({
-        error: error instanceof Error ? error.message : 'Internal server error',
-        code: 'INTERNAL_SERVER_ERROR'
-      })
+    if (!authSession || !authSession.user || !authSession.session) {
+      throw new UnauthorizedError()
     }
+
+    const result = await this.createWorkoutPlanUseCase.execute({
+      userId: authSession.user.id,
+      sessionId: authSession.session.id,
+      name: body.name,
+      workoutDays: body.workoutDays
+    })
+
+    return reply.status(201).send(result)
   }
 }
 
@@ -87,41 +60,21 @@ export class GetWorkoutPlanController {
   constructor(private getWorkoutPlanUseCase: GetWorkoutPlan) {}
 
   async handle(request: FastifyRequest, reply: FastifyReply) {
-    try {
-      const params = request.params as { id: string }
-      const authSession = await auth.api.getSession({
-        headers: fromNodeHeaders(request.headers)
-      })
+    const params = request.params as { id: string }
+    const authSession = await auth.api.getSession({
+      headers: fromNodeHeaders(request.headers)
+    })
 
-      if (!authSession || !authSession.user) {
-        return reply
-          .status(401)
-          .send({ error: 'Unauthorized', code: 'UNAUTHORIZED' })
-      }
-
-      const result = await this.getWorkoutPlanUseCase.execute({
-        userId: authSession.user.id,
-        workoutPlanId: params.id
-      })
-
-      return reply.status(200).send(result)
-    } catch (error) {
-      request.server.log.error(error)
-
-      if (error instanceof NotFoundError)
-        return reply
-          .status(404)
-          .send({ error: error.message, code: 'NOT_FOUND_ERROR' })
-      if (error instanceof UnauthorizedError)
-        return reply
-          .status(401)
-          .send({ error: error.message, code: 'UNAUTHORIZED_ERROR' })
-
-      return reply.status(500).send({
-        error: 'Internal server error',
-        code: 'INTERNAL_SERVER_ERROR'
-      })
+    if (!authSession || !authSession.user) {
+      throw new UnauthorizedError()
     }
+
+    const result = await this.getWorkoutPlanUseCase.execute({
+      userId: authSession.user.id,
+      workoutPlanId: params.id
+    })
+
+    return reply.status(200).send(result)
   }
 }
 
@@ -129,41 +82,21 @@ export class GetWorkoutDayController {
   constructor(private getWorkoutDayUseCase: GetWorkoutDay) {}
 
   async handle(request: FastifyRequest, reply: FastifyReply) {
-    try {
-      const params = request.params as { id: string; dayId: string }
-      const authSession = await auth.api.getSession({
-        headers: fromNodeHeaders(request.headers)
-      })
+    const params = request.params as { id: string; dayId: string }
+    const authSession = await auth.api.getSession({
+      headers: fromNodeHeaders(request.headers)
+    })
 
-      if (!authSession || !authSession.user) {
-        return reply
-          .status(401)
-          .send({ error: 'Unauthorized', code: 'UNAUTHORIZED' })
-      }
-
-      const result = await this.getWorkoutDayUseCase.execute({
-        userId: authSession.user.id,
-        workoutPlanId: params.id,
-        workoutDayId: params.dayId
-      })
-
-      return reply.status(200).send(result)
-    } catch (error) {
-      request.server.log.error(error)
-
-      if (error instanceof NotFoundError)
-        return reply
-          .status(404)
-          .send({ error: error.message, code: 'NOT_FOUND_ERROR' })
-      if (error instanceof UnauthorizedError)
-        return reply
-          .status(401)
-          .send({ error: error.message, code: 'UNAUTHORIZED_ERROR' })
-
-      return reply.status(500).send({
-        error: 'Internal server error',
-        code: 'INTERNAL_SERVER_ERROR'
-      })
+    if (!authSession || !authSession.user) {
+      throw new UnauthorizedError()
     }
+
+    const result = await this.getWorkoutDayUseCase.execute({
+      userId: authSession.user.id,
+      workoutPlanId: params.id,
+      workoutDayId: params.dayId
+    })
+
+    return reply.status(200).send(result)
   }
 }

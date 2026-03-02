@@ -64,20 +64,24 @@ export class CreateWorkoutPlan {
       id: result.id,
       name: result.name,
       isActive: result.isActive,
-      workoutDays: result.workoutDays.map((day) => ({
-        id: day.id,
-        name: day.name,
-        weekDay: day.weekDay,
-        isRest: day.isRest,
-        workoutExercises: day.workoutExercises.map((exercise) => ({
-          id: exercise.id,
-          order: exercise.order,
-          name: exercise.name,
-          set: exercise.set,
-          rep: exercise.rep,
-          restTime: exercise.restTime
-        }))
-      }))
+      workoutDays: result.workoutDays.map(
+        (day: NonNullable<typeof result.workoutDays>[number]) => ({
+          id: day.id,
+          name: day.name,
+          weekDay: day.weekDay,
+          isRest: day.isRest,
+          workoutExercises: day.workoutExercises.map(
+            (exercise: NonNullable<typeof day.workoutExercises>[number]) => ({
+              id: exercise.id,
+              order: exercise.order,
+              name: exercise.name,
+              set: exercise.set,
+              rep: exercise.rep,
+              restTime: exercise.restTime
+            })
+          )
+        })
+      )
     }
   }
 }

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, type Mocked,vi } from 'vitest'
 
 import {
   BadRequestError,
@@ -19,9 +19,9 @@ import {
 
 describe('StartWorkoutSession', () => {
   let useCase: StartWorkoutSession
-  let workoutPlanRepoMock: vi.Mocked<IWorkoutPlanRepository>
-  let workoutDayRepoMock: vi.Mocked<IWorkoutDayRepository>
-  let workoutSessionRepoMock: vi.Mocked<IWorkoutSessionRepository>
+  let workoutPlanRepoMock: Mocked<IWorkoutPlanRepository>
+  let workoutDayRepoMock: Mocked<IWorkoutDayRepository>
+  let workoutSessionRepoMock: Mocked<IWorkoutSessionRepository>
 
   const defaultInput = {
     userId: 'user-id-1',

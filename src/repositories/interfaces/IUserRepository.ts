@@ -1,4 +1,4 @@
-import { User } from '@prisma/client'
+import { User } from '../../generated/prisma/client.js'
 
 export interface IUserRepository {
   findByIdOrThrow(id: string): Promise<User>

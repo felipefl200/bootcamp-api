@@ -7,9 +7,10 @@ import { PrismaWorkoutSessionRepository } from '../repositories/prisma/PrismaWor
 import { GetHomeData } from '../usecases/GetHomeData.js'
 import { GetStats } from '../usecases/GetStats.js'
 
+const workoutPlanRepository = new PrismaWorkoutPlanRepository()
+const workoutSessionRepository = new PrismaWorkoutSessionRepository()
+
 export const makeGetHomeDataController = () => {
-  const workoutPlanRepository = new PrismaWorkoutPlanRepository()
-  const workoutSessionRepository = new PrismaWorkoutSessionRepository()
   const useCase = new GetHomeData(
     workoutPlanRepository,
     workoutSessionRepository
@@ -18,7 +19,6 @@ export const makeGetHomeDataController = () => {
 }
 
 export const makeGetStatsController = () => {
-  const workoutSessionRepository = new PrismaWorkoutSessionRepository()
   const useCase = new GetStats(workoutSessionRepository)
   return new GetStatsController(useCase)
 }

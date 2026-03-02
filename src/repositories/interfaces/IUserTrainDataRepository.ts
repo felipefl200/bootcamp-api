@@ -1,4 +1,4 @@
-import { UserTrainData } from '@prisma/client'
+import { UserTrainData } from '../../generated/prisma/client.js'
 
 export type UpsertUserTrainDataInput = {
   userId: string

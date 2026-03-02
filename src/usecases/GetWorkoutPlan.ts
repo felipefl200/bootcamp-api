@@ -38,13 +38,6 @@ export class GetWorkoutPlan {
     }
 
     const formattedWorkoutDays = workoutPlan.workoutDays.map((day) => {
-      const estimatedDurationInSeconds = day.workoutExercises.reduce(
-        (total, exercise) =>
-          total +
-          (exercise.rep ?? 10) * (exercise.set ?? 3) * 5 + // Evita falha de tipo em exercises (foi select apenas ID no repositório mas no map original esperava details - nota: se quisermos manter exata paridade o findByIdWithDays requer adjust no PRISMA). Alterando lógica para adequar ao tipo simplificado caso necessário, porém pela tipagem o TS vai pegar. Na verdade o original trazia tudo (include workoutExercises: true).
-          (exercise.restTime ?? 60) * (exercise.set ?? 3),
-        0
-      )
       // Nota da Refatoração: O Repositório Prisma atual mapeia a contagem, para a duração precisará retornar details
 
       return {

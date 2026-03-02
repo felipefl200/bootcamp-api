@@ -5,5 +5,5 @@ export interface IController {
   handle(
     request: FastifyRequest,
     reply: FastifyReply
-  ): Promise<void | FastifyReply>
+  ): Promise<void | FastifyReply | Response>
 }

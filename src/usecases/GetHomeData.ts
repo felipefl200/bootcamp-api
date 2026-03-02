@@ -4,6 +4,7 @@ import utc from 'dayjs/plugin/utc.js'
 import { WeekDay } from '../generated/prisma/enums.js'
 import { IWorkoutPlanRepository } from '../repositories/interfaces/IWorkoutPlanRepository.js'
 import { IWorkoutSessionRepository } from '../repositories/interfaces/IWorkoutSessionRepository.js'
+import { calculateWorkoutStreak } from '../utils/workout.js'
 
 dayjs.extend(utc)
 
@@ -105,31 +106,7 @@ export class GetHomeData {
       sessionsThisWeek
     )
 
-    let workoutStreak = 0
-    // Opcional: Se streak precisar de sessões antigas, precisaremos buscar mais atrás, aqui vou focar no refactor mantendo as sessoes dessa semana
-    const recentCompletedSessions = sessionsThisWeek.filter(
-      (s) => s.completedAt !== null
-    )
-
-    const uniqueDates = new Set(
-      recentCompletedSessions.map((s) =>
-        dayjs.utc(s.startedAt).format('YYYY-MM-DD')
-      )
-    )
-    let currentDateToCheck = targetDate
-
-    if (uniqueDates.has(currentDateToCheck.format('YYYY-MM-DD'))) {
-      while (uniqueDates.has(currentDateToCheck.format('YYYY-MM-DD'))) {
-        workoutStreak++
-        currentDateToCheck = currentDateToCheck.subtract(1, 'day')
-      }
-    } else {
-      currentDateToCheck = currentDateToCheck.subtract(1, 'day')
-      while (uniqueDates.has(currentDateToCheck.format('YYYY-MM-DD'))) {
-        workoutStreak++
-        currentDateToCheck = currentDateToCheck.subtract(1, 'day')
-      }
-    }
+    const workoutStreak = calculateWorkoutStreak(sessionsThisWeek, targetDate)
 
     return {
       activeWorkoutPlanId: activeWorkoutPlan.id,

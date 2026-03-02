@@ -8,11 +8,11 @@ import { PrismaWorkoutSessionRepository } from '../repositories/prisma/PrismaWor
 import { StartWorkoutSession } from '../usecases/StartWorkoutSession.js'
 import { UpdateWorkoutSession } from '../usecases/UpdateWorkoutSession.js'
 
-export const makeStartWorkoutSessionController = () => {
-  const workoutPlanRepository = new PrismaWorkoutPlanRepository()
-  const workoutDayRepository = new PrismaWorkoutDayRepository()
-  const workoutSessionRepository = new PrismaWorkoutSessionRepository()
+const workoutPlanRepository = new PrismaWorkoutPlanRepository()
+const workoutDayRepository = new PrismaWorkoutDayRepository()
+const workoutSessionRepository = new PrismaWorkoutSessionRepository()
 
+export const makeStartWorkoutSessionController = () => {
   const useCase = new StartWorkoutSession(
     workoutPlanRepository,
     workoutDayRepository,
@@ -22,9 +22,6 @@ export const makeStartWorkoutSessionController = () => {
 }
 
 export const makeUpdateWorkoutSessionController = () => {
-  const workoutPlanRepository = new PrismaWorkoutPlanRepository()
-  const workoutSessionRepository = new PrismaWorkoutSessionRepository()
-
   const useCase = new UpdateWorkoutSession(
     workoutPlanRepository,
     workoutSessionRepository
