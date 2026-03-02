@@ -12,6 +12,7 @@ import { z } from 'zod'
 
 import { auth } from './lib/auth.js'
 import { homeRoutes } from './routes/home.js'
+import { meRoutes } from './routes/me.js'
 import { statsRoutes } from './routes/stats.js'
 import { workoutPlanRoutes } from './routes/workout-plan.js'
 
@@ -93,6 +94,7 @@ app.withTypeProvider<ZodTypeProvider>().route({
 app.register(workoutPlanRoutes)
 app.register(homeRoutes)
 app.register(statsRoutes)
+app.register(meRoutes)
 
 app.route({
   method: ['GET', 'POST'],

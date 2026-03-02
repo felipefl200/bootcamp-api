@@ -76,7 +76,7 @@ export const UpdateWorkoutSessionResponseSchema = z.object({
   startedAt: z.iso.datetime()
 })
 export const HomeParamsSchema = z.object({
-  date: z.date()
+  date: z.iso.date()
 })
 
 export const HomeResponseSchema = z.object({
@@ -170,4 +170,19 @@ export const GetStatsResponseSchema = z.object({
   completedWorkoutsCount: z.number(),
   conclusionRate: z.number(),
   totalTimeInSeconds: z.number()
+})
+export const UpsertUserTrainDataBodySchema = z.object({
+  weightInGrams: z.number().int(),
+  heightInCentimeters: z.number().int(),
+  age: z.number().int(),
+  bodyFatPercentage: z.number().max(1).min(0)
+})
+
+export const UserTrainDataResponseSchema = z.object({
+  userId: z.cuid(),
+  userName: z.string(),
+  weightInGrams: z.number().int(),
+  heightInCentimeters: z.number().int(),
+  age: z.number().int(),
+  bodyFatPercentage: z.number().max(1).min(0)
 })
