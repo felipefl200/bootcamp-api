@@ -63,7 +63,7 @@ model WorkoutDay {
   name          String
   isRest        Boolean @default(false)
   weekDay       WeekDay
-  coverImageUrl String
+  coverImageUrl String?
 
   workoutPlanId String
   workoutPlan   WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
