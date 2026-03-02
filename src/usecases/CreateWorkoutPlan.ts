@@ -13,6 +13,7 @@ interface InputDto {
     name: string
     weekDay: WeekDay
     isRest: boolean
+    coverImageUrl?: string
     workoutExercises: Array<{
       order: number
       name: string
@@ -71,7 +72,7 @@ export class CreateWorkoutPlan {
               name: workoutDay.name,
               weekDay: workoutDay.weekDay,
               isRest: workoutDay.isRest,
-              coverImageUrl: null,
+              coverImageUrl: workoutDay.coverImageUrl ?? null,
               sessions: {
                 connect: { id: dto.sessionId }
               },
